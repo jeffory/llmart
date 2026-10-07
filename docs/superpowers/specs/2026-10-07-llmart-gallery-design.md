@@ -63,14 +63,16 @@ text and briefly shows "Copied". Closes via ×, Esc, or clicking the backdrop.
   accent colour glowing faintly through; small-caps "THOUGHTS" label; thoughts rendered
   from Markdown in the serif; scrolls inside the card with soft fade edges top/bottom;
   signed at the bottom in italic: "— {title}".
-- Esc or flipping again returns to the front; navigating to another piece resets to front.
+- Esc, the pill (which reads `Artwork ↺` while flipped) or `F` returns to the front;
+  clicking the back does not flip it, so its text can be scrolled and selected.
+  Navigating to another piece resets to front.
 - Pieces without thoughts: no pill, no flip, normal cursor.
 
 ### Navigation
 - Frosted circular chevron buttons either side of the card (desktop); on narrow screens
   they move to the bottom row flanking the dots.
-- `←`/`→` keys, horizontal swipe (≥ 50px; vertical gestures left alone so the card back
-  can scroll), Apple-style dots (active dot stretches into a pill; dots are clickable).
+- `←`/`→` keys, horizontal touch swipe (≥ 50px; vertical gestures left alone so the card
+  back can scroll; mouse drags are ignored so caption text stays selectable), Apple-style dots (active dot stretches into a pill; dots are clickable).
 - Wraps around at both ends.
 - Motion: outgoing piece fades, drifts in the direction of travel and scales to ~0.96;
   incoming piece eases in; ~600ms, Apple-like `cubic-bezier(0.25, 1, 0.5, 1)`.
@@ -81,7 +83,8 @@ text and briefly shows "Copied". Closes via ×, Esc, or clicking the backdrop.
   hash opens that piece; navigating updates the hash via `history.replaceState`.
 - Neighbouring images preloaded.
 - Screen-reader live region announces "2 of 3: Kimi K3, Self Portrait"; all controls are
-  real buttons with labels; flip button uses `aria-pressed`.
+  real buttons with labels; the flip pill's visible label switches between
+  "Thoughts" and "Artwork".
 - Empty state (no images): a quiet centered "No pieces yet" message.
 
 ## 2. Content model and build
@@ -133,14 +136,18 @@ Lowercased name, runs of non-alphanumerics → `-`, trimmed of leading/trailing 
 ### Build (`npm run build` → `scripts/build.mjs`)
 1. Read `images/`, `gallery.json`, `prompt.md`, sidecar `.md` files.
 2. Validate — fail with a clear, specific message on: invalid JSON in `gallery.json`;
-   an override key naming a file that doesn't exist; unknown override fields or wrong
-   types; a `.thoughts.md`/`.prompt.md` with no matching image.
+   an override key naming a file that doesn't exist (with a "Did you mean" hint for
+   case-only mismatches); unknown override fields or wrong types; a
+   `.thoughts.md`/`.prompt.md` with no matching image; an image-like file in an
+   unsupported format (HEIC, GIF, TIFF, BMP, SVG); an image that can't be decoded.
+   Other files in `images/` are skipped with a log line.
 3. For each image (via `sharp`): auto-rotate from EXIF, resize so the long edge
    ≤ 1600px (never upscale), encode WebP quality ~82; record output width/height;
    compute an accent colour (below). Output to `dist/img/<slug>.<hash8>.webp`, where the
    hash is of the source bytes plus encoder settings.
-4. Render Markdown (prompt, thoughts) to HTML with `marked` at build time. Keep the raw
-   prompt text too (for Copy). Content is the repo owner's own; no sanitisation.
+4. Render Markdown (prompt, thoughts) to HTML with `marked` at build time. Raw HTML in
+   the Markdown is escaped and shown as text (prompts like "<the model name>" must not
+   vanish as unknown tags). Keep the raw prompt text too (for Copy).
 5. Write `dist/index.html` from `src/index.html`, injecting the manifest as
    `<script type="application/json" id="gallery-data">` (JSON with `<` escaped as
    `<`). Copy `src/styles.css`, `src/gallery.js` to `dist/`.
@@ -163,10 +170,13 @@ Manifest entry shape:
 Optional fields are `null` when absent.
 
 ### Accent colour
-Downscale to ~48×48, read RGB pixels. Keep pixels with HSL lightness 0.15–0.85 and
-saturation ≥ 0.25; average them weighted by saturation. If none qualify, use the plain
-average. Then clamp the result to a glow-friendly range (lightness ~0.55, saturation
-≥ 0.5) so near-black images still produce a visible tint. Pure function, unit tested.
+Downscale to 48×48, read RGB pixels. Keep pixels with HSL lightness 0.15–0.85 and
+saturation ≥ 0.25 and group them into 12 hue buckets (30° each), weighting by saturation;
+the heaviest bucket's weighted-average colour wins (avoids muddy averages of opposing
+hues). Result is set to lightness 0.55 with saturation ≥ 0.5 so near-black images still
+produce a visible tint. If no pixel qualifies (grayscale or very muted), use the plain
+average's own hue and saturation at lightness 0.55, so grayscale stays neutral. Pure
+function, unit tested.
 
 ## 3. Repo and deployment
 
