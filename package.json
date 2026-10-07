@@ -1,0 +1,20 @@
+{
+  "name": "llmart",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "test": "node --test \"test/*.test.mjs\"",
+    "showcase": "node scripts/showcase.mjs"
+  },
+  "devDependencies": {
+    "marked": "^18.1.0",
+    "sharp": "^0.35.5",
+    "wrangler": "^4.148.0"
+  }
+}
