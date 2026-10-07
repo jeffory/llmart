@@ -4,3 +4,4 @@ dist/
 .dev.vars
 .DS_Store
 .showcase/
+.playwright-mcp/

@@ -1,0 +1,571 @@
+/* llmart — one piece at a time. */
+
+:root {
+  color-scheme: dark;
+  --bg: #050506;
+  --text: #f5f5f7;
+  --muted: #86868b;
+  --glass: rgb(255 255 255 / 0.07);
+  --glass-strong: rgb(255 255 255 / 0.14);
+  --hairline: rgb(255 255 255 / 0.1);
+  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --gutter: 16px;
+  --radius: 10px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: ui-serif, "New York", "Newsreader", "Iowan Old Style", Georgia, serif;
+  /* Space taken by the top bar, dock, caption and padding. The card gets the rest:
+     card + visible reflection - caption overlap = 1.16 × card height. */
+  --chrome-h: 300px;
+  --card-h: max(180px, min(64vh, calc((100vh - var(--chrome-h)) / 1.16)));
+  --side-space: calc(2 * var(--gutter));
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --card-h: max(180px, min(64dvh, calc((100dvh - var(--chrome-h)) / 1.16)));
+  }
+}
+
+@media (min-width: 720px) {
+  :root {
+    --side-space: calc(2 * (var(--gutter) + 44px + 36px));
+  }
+}
+
+@media (max-width: 719px) {
+  :root {
+    --chrome-h: 262px;
+  }
+}
+
+@media (max-height: 560px) {
+  :root {
+    --chrome-h: 200px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html {
+  height: 100%;
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: radial-gradient(120% 80% at 50% 35%, #0c0c0f 0%, var(--bg) 60%);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 0.85);
+  outline-offset: 3px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Ambient glow ---- */
+
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ambient__layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.4s var(--ease);
+  /* Sized from the card (measured by gallery.js) so the halo hugs it on any screen shape. */
+  background:
+    radial-gradient(
+        ellipse max(calc(var(--card-w, 360px) * 0.8 + 140px), 36vw) calc(var(--card-h-px, 520px) * 0.62 + 90px)
+          at 50% var(--nav-y, 42%),
+        rgb(var(--glow) / 0.28),
+        transparent 72%
+      ),
+    radial-gradient(
+        ellipse max(calc(var(--card-w, 360px) * 0.7), 20vw) 70px at 50% var(--floor-y, 76%),
+        rgb(var(--glow) / 0.16),
+        transparent 75%
+      );
+}
+
+.ambient__layer.is-active {
+  opacity: 1;
+}
+
+/* ---- Top bar ---- */
+
+.topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(20px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 0 max(24px, env(safe-area-inset-left));
+}
+
+.wordmark {
+  color: var(--text);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+}
+
+.wordmark span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.counter {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+}
+
+.counter [data-counter-current] {
+  color: var(--text);
+}
+
+.counter__sep {
+  opacity: 0.5;
+}
+
+/* ---- Stage and slides ---- */
+
+.stage {
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+  touch-action: pan-y;
+}
+
+.viewport {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+
+.slide {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.slide.is-leaving {
+  pointer-events: none;
+}
+
+.piece {
+  width: min(calc(var(--card-h) * var(--ar)), calc(100vw - var(--side-space)));
+}
+
+.piece__frame,
+.reflection__stage {
+  perspective: 1800px;
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--ar);
+  transform-style: preserve-3d;
+}
+
+.card__face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.card__face--front {
+  background: rgb(var(--accent-rgb) / 0.12);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.06),
+    0 40px 80px -30px rgb(0 0 0 / 0.9);
+}
+
+.card__face--front img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.9s var(--ease);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.card__face--front.is-loaded img {
+  opacity: 1;
+}
+
+.card__face--back {
+  transform: rotateY(180deg);
+  background: #0c0c0e;
+}
+
+.slide[data-flippable] [data-front] {
+  cursor: pointer;
+}
+
+/* Reflection: a mirrored clone of the card on a glossy black floor. Its contents are
+   flipped vertically while the clone rotates exactly like the real card. */
+.reflection {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--ar) / 0.28;
+  margin-top: 3px;
+  /* Let the caption overlap the faded lower part of the reflection (12% of card height). */
+  margin-bottom: calc(-100% * 0.12 / var(--ar));
+  overflow: hidden;
+  pointer-events: none;
+  filter: blur(1.5px);
+  -webkit-mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.4), transparent 88%);
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.4), transparent 88%);
+}
+
+.reflection .card__face {
+  box-shadow: none;
+}
+
+.mirror {
+  transform: scaleY(-1);
+}
+
+/* ---- Caption ---- */
+
+.caption {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(640px, calc(100vw - 2 * var(--gutter)));
+  text-align: center;
+}
+
+.caption__title {
+  margin: 0;
+  font-size: clamp(26px, 1.25rem + 1.3vw, 40px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.026em;
+  text-wrap: balance;
+}
+
+.caption__subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: clamp(15px, 0.85rem + 0.35vw, 19px);
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+}
+
+.caption__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 14px 0 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    transform 0.3s var(--ease);
+}
+
+.pill:hover {
+  border-color: rgb(255 255 255 / 0.16);
+  background: var(--glass-strong);
+}
+
+.pill:active {
+  transform: scale(0.96);
+}
+
+.pill svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.75;
+}
+
+/* ---- Dock: dots + buttons ---- */
+
+.dock {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px var(--gutter) max(22px, env(safe-area-inset-bottom));
+}
+
+.nav-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+  cursor: pointer;
+  transition:
+    background-color 0.25s,
+    scale 0.3s var(--ease);
+}
+
+.nav-button:hover {
+  background: var(--glass-strong);
+}
+
+.nav-button:active {
+  scale: 0.92;
+}
+
+.nav-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Desktop: buttons float beside the card (position measured by gallery.js). */
+@media (min-width: 720px) {
+  .nav-button {
+    position: fixed;
+    z-index: 3;
+    top: var(--nav-y, 45%);
+    translate: 0 -50%;
+    transition:
+      background-color 0.25s,
+      scale 0.3s var(--ease),
+      top 0.6s var(--ease),
+      left 0.6s var(--ease),
+      right 0.6s var(--ease);
+  }
+
+  .nav-button--prev {
+    left: max(var(--gutter), calc(50% - var(--card-w, 360px) / 2 - 80px));
+  }
+
+  .nav-button--next {
+    right: max(var(--gutter), calc(50% - var(--card-w, 360px) / 2 - 80px));
+  }
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+}
+
+.dots__window {
+  max-width: 172px;
+  overflow: hidden;
+  padding: 12px 4px;
+}
+
+/* Fade an edge only when more dots are hidden beyond it. */
+.dots__window {
+  --fade-start: 0px;
+  --fade-end: 0px;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
+}
+
+.dots__window.fade-start {
+  --fade-start: 20px;
+}
+
+.dots__window.fade-end {
+  --fade-end: 20px;
+}
+
+.dots__track {
+  --dot: 7px;
+  --dot-active: 22px;
+  --dot-gap: 9px;
+  display: flex;
+  gap: var(--dot-gap);
+  width: max-content;
+  transition: transform 0.6s var(--ease);
+}
+
+.dot {
+  position: relative;
+  flex: none;
+  width: var(--dot);
+  height: var(--dot);
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.3);
+  cursor: pointer;
+  transition:
+    width 0.5s var(--ease),
+    background-color 0.3s;
+}
+
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: -12px calc(var(--dot-gap) / -2);
+}
+
+.dot:hover {
+  background: rgb(255 255 255 / 0.6);
+}
+
+.dot[aria-current="true"] {
+  width: var(--dot-active);
+  background: var(--text);
+}
+
+/* ---- Empty state ---- */
+
+.empty {
+  padding: 0 var(--gutter);
+  text-align: center;
+}
+
+.empty__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.empty__hint {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.empty__hint code {
+  color: var(--text);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.noscript {
+  position: fixed;
+  inset: auto 0 45% 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---- Short viewports (landscape phones) ---- */
+
+@media (max-height: 560px) {
+  .topbar {
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+
+  .dock {
+    padding-top: 6px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .caption__title {
+    font-size: 22px;
+  }
+
+  .caption__subtitle {
+    margin-top: 2px;
+    font-size: 14px;
+  }
+
+  .caption__actions {
+    margin-top: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient__layer,
+  .dots__track,
+  .dot,
+  .nav-button,
+  .card__face--front img {
+    transition-duration: 0.01ms;
+  }
+}
