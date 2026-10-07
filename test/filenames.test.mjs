@@ -13,17 +13,18 @@ test('splitExtension lowercases the extension and keeps dotted names intact', ()
 test('classifyFiles sorts files into images, sidecars, unsupported and ignored', () => {
   const result = classifyFiles([
     'a.png', 'B.JPG', 'c.webp', 'd.avif', 'e.jpeg',
-    'a.thoughts.md', 'a.Prompt.MD',
+    'a.thoughts.md', 'a.Prompt.MD', 'B.txt',
     'IMG_0001.HEIC', 'loop.gif',
-    'notes.txt', '.DS_Store',
+    'a.xuan', '.DS_Store',
   ]);
   assert.deepEqual(result.images, ['a.png', 'B.JPG', 'c.webp', 'd.avif', 'e.jpeg']);
   assert.deepEqual(result.sidecars, [
     { file: 'a.thoughts.md', name: 'a', kind: 'thoughts' },
     { file: 'a.Prompt.MD', name: 'a', kind: 'prompt' },
+    { file: 'B.txt', name: 'B', kind: 'thoughts' },
   ]);
   assert.deepEqual(result.unsupported, ['IMG_0001.HEIC', 'loop.gif']);
-  assert.deepEqual(result.ignored, ['notes.txt']);
+  assert.deepEqual(result.ignored, ['a.xuan']);
 });
 
 test('captionFromFilename splits title and subtitle on the first " - "', () => {

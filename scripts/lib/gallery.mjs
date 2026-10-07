@@ -3,7 +3,9 @@
 export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.avif'];
 // Image types people are likely to upload that the pipeline doesn't accept.
 const UNSUPPORTED_IMAGE_EXTENSIONS = ['.heic', '.heif', '.gif', '.tif', '.tiff', '.bmp', '.svg'];
-const SIDECAR_PATTERN = /^(.+)\.(thoughts|prompt)\.md$/i;
+// Text files next to an image: `<name>.txt` and `<name>.thoughts.md` are the model's thoughts.
+const SIDECAR_PATTERN = /^(.+)\.(thoughts\.md|prompt\.md|txt)$/i;
+const SIDECAR_KINDS = { 'thoughts.md': 'thoughts', 'prompt.md': 'prompt', txt: 'thoughts' };
 
 export class GalleryError extends Error {
   name = 'GalleryError';
@@ -25,7 +27,7 @@ export function classifyFiles(filenames) {
     const { ext } = splitExtension(file);
     const sidecar = file.match(SIDECAR_PATTERN);
     if (IMAGE_EXTENSIONS.includes(ext)) images.push(file);
-    else if (sidecar) sidecars.push({ file, name: sidecar[1], kind: sidecar[2].toLowerCase() });
+    else if (sidecar) sidecars.push({ file, name: sidecar[1], kind: SIDECAR_KINDS[sidecar[2].toLowerCase()] });
     else if (UNSUPPORTED_IMAGE_EXTENSIONS.includes(ext)) unsupported.push(file);
     else ignored.push(file);
   }
@@ -106,12 +108,18 @@ export function parseOverrides(text, imageFiles) {
 export function planGallery({ images, overrides = {}, sidecars = [], sharedPrompt = null }) {
   const imageNames = new Set(images.map((file) => splitExtension(file).name));
   const texts = new Map();
+  const sources = new Map();
   for (const { file, name, kind, text } of sidecars) {
     if (!imageNames.has(name)) {
       throw new GalleryError(
         `images/${file} has no matching image — expected an image named "${name}" (.png, .jpg, .jpeg, .webp or .avif) next to it.`,
       );
     }
+    const source = `${name}\0${kind}`;
+    if (sources.has(source)) {
+      throw new GalleryError(`images/${sources.get(source)} and images/${file} are both ${kind} for "${name}" — keep one.`);
+    }
+    sources.set(source, file);
     texts.set(name, { ...texts.get(name), [kind]: text });
   }
 

@@ -2653,8 +2653,7 @@ git commit -m "Add flip-to-read thoughts and prompt sheet"
 
 ```json
 {
-  "Deepseek v4 Flash.png": { "title": "DeepSeek v4 Flash", "subtitle": "Self Portrait" },
-  "kimi-k3-self-portrait.png": { "title": "Kimi K3", "subtitle": "Self Portrait" }
+  "Deepseek v4 Flash - Self Portrait.png": { "title": "DeepSeek v4 Flash" }
 }
 ```
 
@@ -2673,12 +2672,14 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
 
    | Filename | Caption |
    |---|---|
-   | `Claude Opus 5.5 - Self Portrait.png` | **Claude Opus 5.5** · Self Portrait |
-   | `Deepseek v4 Flash.png` | **Deepseek v4 Flash** |
-   | `kimi-k3-self-portrait.png` | **Kimi K3 Self Portrait** |
+   | `Kimi K3 - Self Portrait.png` | **Kimi K3** · Self Portrait |
+   | `Space Bunny.png` | **Space Bunny** |
+   | `night-owl-study.png` | **Night Owl Study** |
 
 2. **Optional extras**, named after the image (same name, different ending):
-   - `images/<name>.thoughts.md` — the model's thoughts, written on the back of the card.
+   - `images/<name>.txt` — the model's thoughts, written on the back of the card
+     (Markdown works: `- lists`, `**bold**`). `<name>.thoughts.md` works too.
+   - Anything else in `images/` (like `.xuan` sources) is ignored by the site.
    - `images/<name>.prompt.md` — only if this piece's prompt differs from `prompt.md`.
 
 3. **Commit and push to `main`.** On GitHub this works entirely in the browser:
@@ -2738,8 +2739,8 @@ Then:
 - [ ] **Step 5: Full browser pass on `http://localhost:8787/`**
 
 Desktop 1440×900 and phone 390×844, for each of the three pieces:
-- Screenshot; check caption text: "Claude Opus 5.5 / Self Portrait", "DeepSeek v4 Flash / Self Portrait", "Kimi K3 / Self Portrait".
-- Prompt sheet for Kimi says "…you, Kimi K3 would look like…".
+- Screenshot; check caption text matches each filename (e.g. "Kimi K3 / Self Portrait"), with "DeepSeek v4 Flash" capitalised by `gallery.json`.
+- Prompt sheet for Kimi says "…you, Kimi K3 would look like…"; pieces with a non-empty `.txt` show a Thoughts pill and flip to it; Inkling (empty `.txt`) and (Old) Claude have no Thoughts pill.
 - No console errors; no horizontal scroll at 390px.
 - `browser_emulate_media` with `reducedMotion: 'reduce'`, navigate between pieces → plain crossfade, no slide drift.
 - Review the screenshots critically for visual quality (spacing, glow strength, reflection opacity, caption overlap, button placement). Tune values in `src/styles.css` where something looks off, rebuild, re-check.

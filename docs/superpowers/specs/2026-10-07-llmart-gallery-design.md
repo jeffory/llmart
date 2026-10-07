@@ -93,12 +93,14 @@ text and briefly shows "Copied". Closes via ×, Esc, or clicking the backdrop.
 ```
 images/
   <name>.png|jpg|jpeg|webp|avif     the artwork (required)
-  <name>.thoughts.md                 optional: model's thoughts (card back)
+  <name>.txt                         optional: model's thoughts (card back)
+  <name>.thoughts.md                 optional: same as .txt (one or the other, not both)
   <name>.prompt.md                   optional: overrides the shared prompt
 prompt.md                            optional: shared prompt for every piece
 gallery.json                         optional: caption/order overrides
 ```
 `<name>` is the image filename without its extension. Sidecars match by exact `<name>`.
+Other files (e.g. Xuan `.xuan` painting sources) may live in `images/`; the build skips them.
 
 **Prompt template:** in any prompt (shared or per-image), `{{model}}` is replaced with the
 piece's final title (after overrides), e.g. "…what you think, you, Kimi K3 would look
@@ -121,8 +123,8 @@ Optional. Object keyed by exact image filename:
 }
 ```
 - Allowed keys: `title` (string), `subtitle` (string; `""` removes it), `order` (number).
-- Initial content: `Deepseek v4 Flash.png` → `DeepSeek v4 Flash` / `Self Portrait`;
-  `kimi-k3-self-portrait.png` → `Kimi K3` / `Self Portrait`.
+- Initial content: `Deepseek v4 Flash - Self Portrait.png` → title `DeepSeek v4 Flash`
+  (the owner has since renamed the other files to the `Name - Self Portrait` pattern).
 
 ### Ordering
 Pieces with `order` first, ascending; ties and all others by filename, case-insensitive

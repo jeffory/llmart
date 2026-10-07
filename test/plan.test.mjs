@@ -123,6 +123,20 @@ test('planGallery rejects a sidecar with no matching image', () => {
   );
 });
 
+test('planGallery rejects two thoughts files for the same image', () => {
+  assert.throws(
+    () =>
+      planGallery({
+        images: ['a.png'],
+        sidecars: [
+          { file: 'a.txt', name: 'a', kind: 'thoughts', text: 'one' },
+          { file: 'a.thoughts.md', name: 'a', kind: 'thoughts', text: 'two' },
+        ],
+      }),
+    galleryError(/images\/a\.txt.*images\/a\.thoughts\.md/),
+  );
+});
+
 test('planGallery returns an empty list for no images', () => {
   assert.deepEqual(planGallery({ images: [] }), []);
 });
