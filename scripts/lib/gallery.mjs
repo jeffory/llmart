@@ -1,6 +1,7 @@
 // Pure gallery logic: every decision the build makes that doesn't touch the filesystem.
 
-export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.avif'];
+// .jfif/.jpe are JPEGs under the names browsers sometimes "Save image as".
+export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.jfif', '.jpe', '.webp', '.avif'];
 // Image types people are likely to upload that the pipeline doesn't accept.
 const UNSUPPORTED_IMAGE_EXTENSIONS = ['.heic', '.heif', '.gif', '.tif', '.tiff', '.bmp', '.svg'];
 // Text files next to an image: `<name>.txt` and `<name>.thoughts.md` are the model's thoughts.

@@ -95,7 +95,9 @@ async function processImage(file, slug, outDir) {
       accent: pickAccent(thumbnail.data, thumbnail.info.channels),
     };
   } catch (error) {
-    throw new GalleryError(`Could not process images/${path.basename(file)}: ${error.message}`);
+    throw new GalleryError(
+      `Could not process images/${path.basename(file)} (${error.message}). Re-export it as PNG, JPG, WebP or AVIF.`,
+    );
   }
 }
 

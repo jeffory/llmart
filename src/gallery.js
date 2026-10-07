@@ -5,6 +5,10 @@
   const DURATION = 650;
   const EASE = 'cubic-bezier(0.25, 1, 0.5, 1)';
   const SWIPE_DISTANCE = 50;
+  // Slide height per card height: card + visible reflection (0.28) - caption overlap (0.12).
+  // Mirrors .reflection in styles.css.
+  const SLIDE_TO_CARD = 1.16;
+  const BREATHING_ROOM = 28;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   const $ = (selector) => document.querySelector(selector);
@@ -252,13 +256,20 @@
     activeGlow = 1 - activeGlow;
   }
 
-  // Positions the desktop buttons and the glow around the current card. Uses layout offsets
-  // (relative to the stage) rather than getBoundingClientRect, which would include the
-  // slide's in-flight entrance transform.
+  // Fits the card to the room the caption leaves, then positions the desktop buttons and the
+  // glow around it.
   function measure() {
     if (!current) return;
+    // Measured rather than assumed, so two-line titles and landscape phones never push the
+    // caption under the dock.
+    const room = els.stage.clientHeight - current.querySelector('.caption').offsetHeight - BREATHING_ROOM;
+    els.root.style.setProperty('--card-h-fit', `${Math.max(0, room) / SLIDE_TO_CARD}px`);
+
     const frame = current.querySelector('.piece__frame');
-    const top = els.stage.getBoundingClientRect().top + frame.offsetTop;
+    // Layout offsets ignore the slide's in-flight entrance transform (getBoundingClientRect
+    // wouldn't). Walk up to the stage: Firefox makes the transformed slide the offsetParent.
+    let top = els.stage.getBoundingClientRect().top;
+    for (let node = frame; node && node !== els.stage; node = node.offsetParent) top += node.offsetTop;
     els.root.style.setProperty('--card-w', `${frame.offsetWidth}px`);
     els.root.style.setProperty('--card-h-px', `${frame.offsetHeight}px`);
     els.root.style.setProperty('--nav-y', `${top + frame.offsetHeight / 2}px`);
@@ -311,7 +322,11 @@
     let start = null;
     let swiped = false;
     els.stage.addEventListener('pointerdown', (event) => {
-      if (event.pointerType === 'mouse' || !event.isPrimary) return;
+      if (event.pointerType === 'mouse') return;
+      if (!event.isPrimary) {
+        start = null; // a second finger means pinch, not swipe
+        return;
+      }
       start = { x: event.clientX, y: event.clientY, id: event.pointerId };
       swiped = false;
     });

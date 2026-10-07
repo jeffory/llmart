@@ -7,6 +7,8 @@ const escapeHtml = (text) =>
 const marked = new Marked({
   async: false,
   gfm: true,
+  // Thoughts are usually pasted plain text: keep its single line breaks.
+  breaks: true,
   renderer: {
     html: ({ text }) => escapeHtml(text),
   },

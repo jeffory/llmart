@@ -34,8 +34,8 @@ no multiple image sizes/srcset, no comments or likes.
   Newsreader fallback (Google Fonts).
 
 ### Artwork card
-- Centered; height ≈ 60vh on desktop (smaller on phones so caption, reflection and nav
-  fit), width derived from the image's aspect ratio and clamped to viewport minus a
+- Centered; height ≈ 60vh on desktop, otherwise fitted by gallery.js to the stage height
+  left after the measured caption (so two-line titles and landscape phones still fit), width derived from the image's aspect ratio and clamped to viewport minus a
   16px gutter each side. Small corner radius.
 - Layout dimensions come from build-time metadata, so there is no layout shift.
 - **Reflection:** a mirrored copy of the card directly beneath (`scaleY(-1)`), ~25%
@@ -92,7 +92,7 @@ text and briefly shows "Copied". Closes via ×, Esc, or clicking the backdrop.
 ### Content files
 ```
 images/
-  <name>.png|jpg|jpeg|webp|avif     the artwork (required)
+  <name>.png|jpg|jpeg|jfif|jpe|webp|avif   the artwork (required)
   <name>.txt                         optional: model's thoughts (card back)
   <name>.thoughts.md                 optional: same as .txt (one or the other, not both)
   <name>.prompt.md                   optional: overrides the shared prompt
@@ -103,7 +103,7 @@ gallery.json                         optional: caption/order overrides
 Other files (e.g. Xuan `.xuan` painting sources) may live in `images/`; the build skips them.
 
 **Prompt template:** in any prompt (shared or per-image), `{{model}}` is replaced with the
-piece's final title (after overrides), e.g. "…what you think, you, Kimi K3 would look
+piece's `model` override if set, otherwise its final title (after overrides), e.g. "…what you think, you, Kimi K3 would look
 like…". Substitution happens before Markdown rendering, so it applies to both the
 displayed and the copied text.
 
@@ -122,7 +122,9 @@ Optional. Object keyed by exact image filename:
   "kimi-k3-self-portrait.png": { "title": "Kimi K3", "subtitle": "Self Portrait", "order": 3 }
 }
 ```
-- Allowed keys: `title` (string), `subtitle` (string; `""` removes it), `order` (number).
+- Allowed keys: `title` (string), `subtitle` (string; `""` removes it), `order` (number),
+  `model` (string; the name used for `{{model}}` when the title isn't simply the model's
+  name, e.g. "(Old) Claude Opus 5.5" → "Claude Opus 5.5").
 - Initial content: `Deepseek v4 Flash - Self Portrait.png` → title `DeepSeek v4 Flash`
   (the owner has since renamed the other files to the `Name - Self Portrait` pattern).
 
@@ -149,7 +151,8 @@ Lowercased name, runs of non-alphanumerics → `-`, trimmed of leading/trailing 
    hash is of the source bytes plus encoder settings.
 4. Render Markdown (prompt, thoughts) to HTML with `marked` at build time. Raw HTML in
    the Markdown is escaped and shown as text (prompts like "<the model name>" must not
-   vanish as unknown tags). Keep the raw prompt text too (for Copy).
+   vanish as unknown tags). Single line breaks are kept (`breaks: true`), since thoughts
+   are usually pasted plain text. Keep the raw prompt text too (for Copy).
 5. Write `dist/index.html` from `src/index.html`, injecting the manifest as
    `<script type="application/json" id="gallery-data">` (JSON with `<` escaped as
    `<`). Copy `src/styles.css`, `src/gallery.js` to `dist/`.

@@ -74,7 +74,7 @@ test('build refuses unsupported image formats by name', async (t) => {
 
 test('build names an image it cannot decode', async (t) => {
   const { root, outDir } = await fixture(t, { 'images/broken.png': 'this is not a png' });
-  await assert.rejects(build({ root, outDir, log: silent }), galleryError(/images\/broken\.png/));
+  await assert.rejects(build({ root, outDir, log: silent }), galleryError(/images\/broken\.png.*PNG, JPG, WebP or AVIF/));
 });
 
 test('build fails on a sidecar with no image', async (t) => {

@@ -14,3 +14,10 @@ test('renderMarkdown shows raw HTML as text instead of swallowing it', () => {
   assert.match(renderMarkdown('<div>block</div>'), /&lt;div&gt;block&lt;\/div&gt;/);
   assert.match(renderMarkdown('end </script> here'), /&lt;\/script&gt;/);
 });
+
+test('renderMarkdown keeps single line breaks from pasted plain text', () => {
+  assert.equal(
+    renderMarkdown('Line one\nLine two\n• bullet a').trim(),
+    '<p>Line one<br>Line two<br>• bullet a</p>',
+  );
+});

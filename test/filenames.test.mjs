@@ -49,3 +49,7 @@ test('slugify makes URL-safe slugs and never returns an empty string', () => {
   assert.equal(slugify('Café Crème'), 'cafe-creme');
   assert.equal(slugify('通义千问'), 'piece');
 });
+
+test('classifyFiles accepts the JPEG variants browsers save (.jfif, .jpe)', () => {
+  assert.deepEqual(classifyFiles(['saved.jfif', 'old.JPE']).images, ['saved.jfif', 'old.JPE']);
+});

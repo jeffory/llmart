@@ -13,16 +13,17 @@
   --radius: 10px;
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Arial, sans-serif;
   --font-serif: ui-serif, "New York", "Newsreader", "Iowan Old Style", Georgia, serif;
-  /* Space taken by the top bar, dock, caption and padding. The card gets the rest:
+  /* Card height. gallery.js sets --card-h-fit from the measured stage and caption; before
+     that, assume --chrome-h for the bars, caption and padding.
      card + visible reflection - caption overlap = 1.16 × card height. */
   --chrome-h: 300px;
-  --card-h: max(180px, min(64vh, calc((100vh - var(--chrome-h)) / 1.16)));
+  --card-h: max(110px, min(64vh, var(--card-h-fit, calc((100vh - var(--chrome-h)) / 1.16))));
   --side-space: calc(2 * var(--gutter));
 }
 
 @supports (height: 100dvh) {
   :root {
-    --card-h: max(180px, min(64dvh, calc((100dvh - var(--chrome-h)) / 1.16)));
+    --card-h: max(110px, min(64dvh, var(--card-h-fit, calc((100dvh - var(--chrome-h)) / 1.16))));
   }
 }
 
@@ -179,7 +180,8 @@ button {
   position: relative;
   z-index: 1;
   min-height: 0;
-  touch-action: pan-y;
+  /* Vertical scrolling and pinch-zoom stay native; horizontal swipes go to gallery.js. */
+  touch-action: pan-y pinch-zoom;
 }
 
 .viewport {
@@ -601,6 +603,8 @@ button {
   overscroll-behavior: contain;
   scrollbar-width: none;
   outline: none;
+  /* A scroll container resets touch-action; repeat it so swipes still reach gallery.js. */
+  touch-action: pan-y pinch-zoom;
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 26px, #000 calc(100% - 40px), transparent);
   mask-image: linear-gradient(to bottom, transparent, #000 26px, #000 calc(100% - 40px), transparent);
 }
