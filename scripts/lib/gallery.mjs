@@ -158,3 +158,73 @@ function assignSlugs(pieces) {
     piece.slug = slug;
   }
 }
+
+const NEUTRAL_ACCENT = '#8c8c8c';
+
+export function rgbToHsl(r, g, b) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return [h * 60, s, l];
+}
+
+export function hslToHex(h, s, l) {
+  const a = s * Math.min(l, 1 - l);
+  const channel = (n) => {
+    const k = (n + h / 30) % 12;
+    const value = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(value * 255).toString(16).padStart(2, '0');
+  };
+  return `#${channel(0)}${channel(8)}${channel(4)}`;
+}
+
+// Picks a glow colour: the dominant vivid hue, lifted to a consistent lightness.
+export function pickAccent(pixels, channels = 3) {
+  const buckets = Array.from({ length: 12 }, () => ({ weight: 0, r: 0, g: 0, b: 0 }));
+  let sumR = 0;
+  let sumG = 0;
+  let sumB = 0;
+  let count = 0;
+  for (let i = 0; i + 2 < pixels.length; i += channels) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+    sumR += r;
+    sumG += g;
+    sumB += b;
+    count += 1;
+    const [h, s, l] = rgbToHsl(r, g, b);
+    if (l < 0.15 || l > 0.85 || s < 0.25) continue;
+    const bucket = buckets[Math.floor(h / 30) % 12];
+    bucket.weight += s;
+    bucket.r += r * s;
+    bucket.g += g * s;
+    bucket.b += b * s;
+  }
+  if (count === 0) return NEUTRAL_ACCENT;
+  const best = buckets.reduce((top, bucket) => (bucket.weight > top.weight ? bucket : top));
+  if (best.weight === 0) {
+    // Nothing vivid: keep the image's own muted hue rather than inventing one.
+    const [h, s] = rgbToHsl(sumR / count, sumG / count, sumB / count);
+    return hslToHex(h, s, 0.55);
+  }
+  const [h, s] = rgbToHsl(best.r / best.weight, best.g / best.weight, best.b / best.weight);
+  return hslToHex(h, Math.max(s, 0.5), 0.55);
+}
+
+export function htmlSafeJson(value) {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
