@@ -11,3 +11,11 @@ A stealth model is being tested anonymously, under a codename, before its offici
 ## What are the Thoughts?
 
 The model's own unprompted follow up of its painting, often a description.
+
+## How did this come about?
+
+While testing the MCP capabilities of a [image editor](https://github.com/jeffory/xuan/) I'm working on I discovered that Claude Opus created interesting art, so I asked it for a self portrait and decided to try other models out. It peaked my curiousity because it gives image generation capabilities to all models that can tool call.
+
+## Is this a good benchmark?
+
+Absolutely not, quantatisations against the models aren't recorded, the effort amounts aren't fixed or recorded.
