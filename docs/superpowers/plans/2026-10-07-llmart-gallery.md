@@ -233,7 +233,7 @@ export function captionFromFilename(filename) {
 export function slugify(name) {
   const slug = name
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
@@ -283,7 +283,7 @@ test('parseOverrides treats missing or blank gallery.json as no overrides', () =
 });
 
 test('parseOverrides accepts valid overrides, including a leading BOM', () => {
-  const text = '﻿{ "kimi-k3-self-portrait.png": { "title": "Kimi K3", "subtitle": "", "order": 2 } }';
+  const text = '\uFEFF{ "kimi-k3-self-portrait.png": { "title": "Kimi K3", "subtitle": "", "order": 2 } }';
   assert.deepEqual(parseOverrides(text, images), {
     'kimi-k3-self-portrait.png': { title: 'Kimi K3', subtitle: '', order: 2 },
   });
@@ -381,7 +381,7 @@ test('planGallery attaches thoughts and treats blank text as absent', () => {
     images: ['a.png', 'b.png'],
     sharedPrompt: '   ',
     sidecars: [
-      { file: 'a.thoughts.md', name: 'a', kind: 'thoughts', text: '﻿I see **light**.\n' },
+      { file: 'a.thoughts.md', name: 'a', kind: 'thoughts', text: '\uFEFFI see **light**.\n' },
       { file: 'b.thoughts.md', name: 'b', kind: 'thoughts', text: ' \n ' },
     ],
   });
@@ -416,7 +416,7 @@ const isPlainObject = (value) => typeof value === 'object' && value !== null && 
 
 function cleanText(text) {
   if (text == null) return null;
-  return text.replace(/^﻿/, '').trim() || null;
+  return text.replace(/^\uFEFF/, '').trim() || null;
 }
 
 export function parseOverrides(text, imageFiles) {
@@ -584,10 +584,10 @@ test('pickAccent reads RGBA buffers and survives empty input', () => {
 });
 
 test('htmlSafeJson cannot close the surrounding script tag and round-trips', () => {
-  const value = { text: '</script><script>alert(1)</script>', line: 'a b', dollar: '$&' };
+  const value = { text: '</script><script>alert(1)</script>', line: 'a\u2028b', dollar: '$&' };
   const json = htmlSafeJson(value);
   assert.ok(!json.includes('<'));
-  assert.ok(!json.includes(' '));
+  assert.ok(!json.includes('\u2028'));
   assert.deepEqual(JSON.parse(json), value);
 });
 ```
@@ -666,8 +666,8 @@ export function pickAccent(pixels, channels = 3) {
 export function htmlSafeJson(value) {
   return JSON.stringify(value)
     .replace(/</g, '\\u003c')
-    .replace(/ /g, '\\u2028')
-    .replace(/ /g, '\\u2029');
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 ```
 
