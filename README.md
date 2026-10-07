@@ -35,11 +35,13 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
   one follow alphabetically).
 - `model`: the name used for `{{model}}` in the prompt, when the title isn't simply the
   model's name (e.g. `"(Old) Claude Opus 5.5"` → `"model": "Claude Opus 5.5"`).
+- `stealth`: `true` for a model tested anonymously before release; its caption gets a
+  **Stealth** label.
 - Keys must match the filename exactly. If one doesn't, the build fails and tells you which.
 
 ## The shared prompt — `prompt.md`
 
-Shown on every piece under **Prompt +**. `{{model}}` is replaced with the piece's title
+Shown on every piece under the **Prompt** link (bottom right). `{{model}}` is replaced with the piece's title
 (or its `model` from `gallery.json`). A piece with its own `images/<name>.prompt.md` shows that instead.
 
 ## Local development

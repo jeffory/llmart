@@ -37,19 +37,22 @@
       <div class="viewport" data-viewport></div>
     </main>
 
-    <nav class="dock" aria-label="Gallery" data-dock hidden>
-      <button class="nav-button nav-button--prev" type="button" data-prev aria-label="Previous piece">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" /></svg>
-      </button>
-      <div class="dots">
-        <div class="dots__window" data-dots-window>
-          <div class="dots__track" data-dots></div>
+    <footer class="bottombar" data-bottombar hidden>
+      <nav class="dock" aria-label="Gallery" data-dock hidden>
+        <button class="nav-button nav-button--prev" type="button" data-prev aria-label="Previous piece">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5" /></svg>
+        </button>
+        <div class="dots">
+          <div class="dots__window" data-dots-window>
+            <div class="dots__track" data-dots></div>
+          </div>
         </div>
-      </div>
-      <button class="nav-button nav-button--next" type="button" data-next aria-label="Next piece">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5" /></svg>
-      </button>
-    </nav>
+        <button class="nav-button nav-button--next" type="button" data-next aria-label="Next piece">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5 16 12l-6.5 6.5" /></svg>
+        </button>
+      </nav>
+      <button class="prompt-link" type="button" aria-haspopup="dialog" data-open-prompt hidden>Prompt</button>
+    </footer>
 
     <p class="visually-hidden" aria-live="polite" data-live></p>
 

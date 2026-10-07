@@ -16,6 +16,7 @@
     root: document.documentElement,
     stage: $('[data-stage]'),
     viewport: $('[data-viewport]'),
+    bottombar: $('[data-bottombar]'),
     dock: $('[data-dock]'),
     prev: $('[data-prev]'),
     next: $('[data-next]'),
@@ -25,6 +26,7 @@
     counterCurrent: $('[data-counter-current]'),
     counterTotal: $('[data-counter-total]'),
     live: $('[data-live]'),
+    openPrompt: $('[data-open-prompt]'),
     glowLayers: [...document.querySelectorAll('.ambient__layer')],
     dialog: $('[data-prompt-dialog]'),
     promptTitle: $('[data-prompt-title]'),
@@ -34,7 +36,6 @@
   };
 
   const ICONS = {
-    plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>',
     flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 3.5V8h4.5M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20.5V16h-4.5"/></svg>',
   };
 
@@ -147,15 +148,21 @@
     const title = el('h2', 'caption__title');
     title.textContent = piece.title;
     caption.append(title);
-    if (piece.subtitle) {
+    if (piece.subtitle || piece.stealth) {
       const subtitle = el('p', 'caption__subtitle');
-      subtitle.textContent = piece.subtitle;
+      subtitle.textContent = piece.subtitle ?? '';
+      if (piece.stealth) {
+        const tag = el('span', 'tag', { title: 'Tested anonymously before release' });
+        tag.textContent = 'Stealth';
+        subtitle.append(tag);
+      }
       caption.append(subtitle);
     }
-    const actions = el('div', 'caption__actions');
-    if (piece.promptHtml) actions.append(pill('Prompt', ICONS.plus, { 'data-action': 'prompt', 'aria-haspopup': 'dialog' }));
-    if (piece.thoughtsHtml) actions.append(pill('Thoughts', ICONS.flip, { 'data-action': 'flip' }));
-    if (actions.childElementCount > 0) caption.append(actions);
+    if (piece.thoughtsHtml) {
+      const actions = el('div', 'caption__actions');
+      actions.append(pill('Thoughts', ICONS.flip, { 'data-action': 'flip' }));
+      caption.append(actions);
+    }
     return caption;
   }
 
@@ -240,6 +247,8 @@
       else dot.removeAttribute('aria-current');
     });
     centerActiveDot();
+    els.openPrompt.hidden = !piece.promptHtml;
+    els.bottombar.hidden = els.dock.hidden && els.openPrompt.hidden;
     setGlow(piece.accent);
     document.title = `${piece.title} · llmart`;
     if (!initial) {
@@ -440,6 +449,7 @@
   }
 
   function setupPrompt() {
+    els.openPrompt.addEventListener('click', openPrompt);
     els.closePrompt.addEventListener('click', () => els.dialog.close());
     // Clicks on the backdrop land on the <dialog> itself; clicks in the panel don't.
     els.dialog.addEventListener('click', (event) => {
@@ -455,8 +465,7 @@
 
   function onViewportClick(event) {
     const action = event.target.closest('[data-action]')?.dataset.action;
-    if (action === 'prompt') openPrompt();
-    else if (action === 'flip') setFlipped(!isFlipped());
+    if (action === 'flip') setFlipped(!isFlipped());
     else if (event.target.closest('[data-front]')) setFlipped(true);
   }
 

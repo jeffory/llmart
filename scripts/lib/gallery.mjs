@@ -62,7 +62,8 @@ export function slugify(name) {
 }
 
 // `model` names the model for {{model}} in prompts when the title isn't just the model's name.
-const OVERRIDE_TYPES = { title: 'string', subtitle: 'string', model: 'string', order: 'number' };
+// `stealth` marks a model tested anonymously before release; viewers can hide those pieces.
+const OVERRIDE_TYPES = { title: 'string', subtitle: 'string', model: 'string', order: 'number', stealth: 'boolean' };
 const MODEL_PLACEHOLDER = /\{\{\s*model\s*\}\}/g;
 const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
@@ -97,7 +98,7 @@ export function parseOverrides(text, imageFiles) {
     for (const [key, value] of Object.entries(entry)) {
       const type = OVERRIDE_TYPES[key];
       if (!type) {
-        throw new GalleryError(`gallery.json → "${file}": unknown field "${key}" (allowed: title, subtitle, model, order).`);
+        throw new GalleryError(`gallery.json → "${file}": unknown field "${key}" (allowed: ${Object.keys(OVERRIDE_TYPES).join(', ')}).`);
       }
       if (typeof value !== type || (type === 'number' && !Number.isFinite(value))) {
         throw new GalleryError(`gallery.json → "${file}": "${key}" must be a ${type}.`);
@@ -139,6 +140,7 @@ export function planGallery({ images, overrides = {}, sidecars = [], sharedPromp
       title,
       subtitle,
       order: override.order ?? null,
+      stealth: override.stealth === true,
       // Function replacer so "$&"-style sequences in titles are inserted literally.
       prompt: prompt && prompt.replace(MODEL_PLACEHOLDER, () => model),
       thoughts: cleanText(own.thoughts),

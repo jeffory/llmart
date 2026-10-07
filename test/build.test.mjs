@@ -37,7 +37,7 @@ test('build writes the page, optimized images, data and cache headers', async (t
     'images/small.png': png(300, 200, { r: 220, g: 40, b: 90 }),
     'images/small.txt': 'I am **small**.',
     'prompt.md': 'Paint {{model}} $& </script>',
-    'gallery.json': JSON.stringify({ 'small.png': { title: 'Small One', order: 1 } }),
+    'gallery.json': JSON.stringify({ 'small.png': { title: 'Small One', order: 1, stealth: true } }),
   });
 
   const manifest = await build({ root, outDir, log: silent });
@@ -50,6 +50,7 @@ test('build writes the page, optimized images, data and cache headers', async (t
   assert.equal(small.promptText, 'Paint Small One $& </script>');
   assert.match(small.promptHtml, /Paint Small One \$&amp; &lt;\/script&gt;/);
   assert.equal(tall.subtitle, 'Self Portrait');
+  assert.deepEqual([small.stealth, tall.stealth], [true, false]);
   assert.equal(tall.thoughtsHtml, null);
   assert.deepEqual([tall.width, tall.height], [800, 1600]);
   assert.deepEqual([small.width, small.height], [300, 200]);

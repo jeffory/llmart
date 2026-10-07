@@ -49,6 +49,7 @@ export async function build({
       slug: piece.slug,
       title: piece.title,
       subtitle: piece.subtitle,
+      stealth: piece.stealth,
       ...image,
       promptHtml: piece.prompt && renderMarkdown(piece.prompt),
       promptText: piece.prompt,
