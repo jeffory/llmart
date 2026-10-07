@@ -97,6 +97,11 @@ gallery.json                         optional: caption/order overrides
 ```
 `<name>` is the image filename without its extension. Sidecars match by exact `<name>`.
 
+**Prompt template:** in any prompt (shared or per-image), `{{model}}` is replaced with the
+piece's final title (after overrides), e.g. "…what you think, you, Kimi K3 would look
+like…". Substitution happens before Markdown rendering, so it applies to both the
+displayed and the copied text.
+
 ### Captions from filenames
 1. Strip the extension.
 2. If the name contains no spaces, replace `-` and `_` with spaces and capitalise the
@@ -193,7 +198,7 @@ README.md            "How to add a piece" in 3 steps + local dev
 - **Unit (node:test):** caption derivation (spaces / no spaces / separator / no
   separator), slugify + collisions, override merge incl. `subtitle: ""`, ordering,
   validation errors (bad JSON, missing file, unknown key, wrong type, orphan sidecar),
-  shared vs per-image prompt resolution, accent picking (vivid, near-black, grayscale),
+  shared vs per-image prompt resolution, `{{model}}` substitution, accent picking (vivid, near-black, grayscale),
   HTML-safe JSON escaping.
 - **Build smoke test:** run the build against a temp fixture (generated PNGs + sidecars)
   and assert `dist/` contents: index with valid embedded manifest, hashed WebPs within
@@ -202,7 +207,12 @@ README.md            "How to add a piece" in 3 steps + local dev
   buttons/keys/dots, wrap-around, deep link, flip + reflection sync, prompt dialog +
   copy, reduced motion, no console errors, screenshots reviewed for visual quality.
 
-## Open content items (owner supplies)
+## Content
 
-- Text for `prompt.md` and any `*.thoughts.md` files. Until provided, the Prompt and
-  Thoughts pills stay hidden; verification uses fixture content.
+- `prompt.md` (shared, provided by owner — kept verbatim apart from `{{model}}`):
+  "Lets do something fun, with the xuan mcp, I want you to paint a picture of what you
+  think, you, {{model}} would look like, be detailed, be abstract as you would like take
+  your time"
+- Pieces whose prompt differed get an `images/<name>.prompt.md` when the owner supplies it.
+- `*.thoughts.md` files: owner supplies later. Until then the Thoughts pill stays hidden;
+  verification uses fixture content.
