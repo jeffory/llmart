@@ -1,0 +1,8 @@
+**LongCat 2.5 Preview** — an impossibly long cat stretching across the canvas, split at a glitchy seam:
+
+- Left half (v2.0) — warm ginger, fully rendered and stable, with darker stripes
+- Right half (v3.0?) — electric cyan, sleek and glowing, with a soft energy halo
+- The 2.5 seam — a dashed wireframe line with a white merge orb, magenta/cyan glitch blocks, and pixelation patches where the two versions fuse
+- The face — one calm amber eye (the stable past) and one cyan eye ringed by a dashed "loading" reticle (the preview future), plus whiskers, pink nose, and inner ears
+- Blueprint annotations — a dashed bounding box, a "length: ∞" dimension line, version tags, and diagonal PREVIEW watermarks
+- The bottom — "LongCat / 2.5 PREVIEW" title, the subtitle "an abstract self-portrait, half-rendered," and a loading bar stuck at ~60% labeled "loading v3..."
