@@ -5,8 +5,8 @@ export const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.jfif', '.jpe', '.web
 // Image types people are likely to upload that the pipeline doesn't accept.
 const UNSUPPORTED_IMAGE_EXTENSIONS = ['.heic', '.heif', '.gif', '.tif', '.tiff', '.bmp', '.svg'];
 // Text files next to an image: `<name>.txt` and `<name>.thoughts.md` are the model's thoughts.
-const SIDECAR_PATTERN = /^(.+)\.(thoughts\.md|prompt\.md|txt)$/i;
-const SIDECAR_KINDS = { 'thoughts.md': 'thoughts', 'prompt.md': 'prompt', txt: 'thoughts' };
+const SIDECAR_PATTERN = /^(.+)\.(thoughts\.md|txt)$/i;
+const SIDECAR_KINDS = { 'thoughts.md': 'thoughts', txt: 'thoughts' };
 
 export class GalleryError extends Error {
   name = 'GalleryError';
@@ -61,10 +61,8 @@ export function slugify(name) {
   return slug || 'piece';
 }
 
-// `model` names the model for {{model}} in prompts when the title isn't just the model's name.
-// `stealth` marks a model tested anonymously before release; viewers can hide those pieces.
-const OVERRIDE_TYPES = { title: 'string', subtitle: 'string', model: 'string', order: 'number', stealth: 'boolean' };
-const MODEL_PLACEHOLDER = /\{\{\s*model\s*\}\}/g;
+// `stealth` marks a model tested anonymously before release; its caption says so.
+const OVERRIDE_TYPES = { title: 'string', subtitle: 'string', order: 'number', stealth: 'boolean' };
 const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
 const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -108,7 +106,7 @@ export function parseOverrides(text, imageFiles) {
   return data;
 }
 
-export function planGallery({ images, overrides = {}, sidecars = [], sharedPrompt = null }) {
+export function planGallery({ images, overrides = {}, sidecars = [] }) {
   const imageNames = new Set(images.map((file) => splitExtension(file).name));
   const texts = new Map();
   const sources = new Map();
@@ -126,23 +124,18 @@ export function planGallery({ images, overrides = {}, sidecars = [], sharedPromp
     texts.set(name, { ...texts.get(name), [kind]: text });
   }
 
-  const shared = cleanText(sharedPrompt);
   const pieces = images.map((file) => {
     const caption = captionFromFilename(file);
     const override = overrides[file] ?? {};
     const own = texts.get(splitExtension(file).name) ?? {};
     const title = override.title?.trim() || caption.title;
     const subtitle = override.subtitle === undefined ? caption.subtitle : override.subtitle.trim() || null;
-    const prompt = cleanText(own.prompt) ?? shared;
-    const model = override.model?.trim() || title;
     return {
       file,
       title,
       subtitle,
       order: override.order ?? null,
       stealth: override.stealth === true,
-      // Function replacer so "$&"-style sequences in titles are inserted literally.
-      prompt: prompt && prompt.replace(MODEL_PLACEHOLDER, () => model),
       thoughts: cleanText(own.thoughts),
     };
   });
@@ -150,6 +143,28 @@ export function planGallery({ images, overrides = {}, sidecars = [], sharedPromp
   pieces.sort(comparePieces);
   assignSlugs(pieces);
   return pieces.map(({ order, ...piece }) => piece);
+}
+
+const PROMPT_PLACEHOLDER = /\{\{\s*prompt\s*\}\}/;
+// A {{prompt}} that starts a line, after any "> " quote markers.
+const PROMPT_LINE = /^([ \t>]*)\{\{\s*prompt\s*\}\}/gm;
+const MODEL_PLACEHOLDER = /\{\{\s*model\s*\}\}/g;
+
+// faq.md as Markdown, with {{prompt}} filled from prompt.md. The FAQ is about no piece in
+// particular, so {{model}} reads "<model name>". A quoted {{prompt}} stays quoted on every line.
+export function fillFaq(faqText, promptText) {
+  const faq = cleanText(faqText);
+  if (faq === null) return null;
+  const prompt = cleanText(promptText);
+  if (prompt === null && PROMPT_PLACEHOLDER.test(faq)) {
+    throw new GalleryError('faq.md uses {{prompt}}, but prompt.md is missing or empty.');
+  }
+  const lines = prompt?.split(/\r?\n/) ?? [];
+  // Function replacers so "$&"-style sequences in the prompt are inserted literally.
+  return faq
+    .replace(PROMPT_LINE, (_, quote) => quote + lines.join(`\n${quote}`))
+    .replace(new RegExp(PROMPT_PLACEHOLDER, 'g'), () => prompt)
+    .replace(MODEL_PLACEHOLDER, () => '<model name>');
 }
 
 function comparePieces(a, b) {

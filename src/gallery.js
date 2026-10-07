@@ -26,13 +26,11 @@
     counterCurrent: $('[data-counter-current]'),
     counterTotal: $('[data-counter-total]'),
     live: $('[data-live]'),
-    openPrompt: $('[data-open-prompt]'),
+    openFaq: $('[data-open-faq]'),
     glowLayers: [...document.querySelectorAll('.ambient__layer')],
-    dialog: $('[data-prompt-dialog]'),
-    promptTitle: $('[data-prompt-title]'),
-    promptBody: $('[data-prompt-body]'),
-    copyPrompt: $('[data-copy-prompt]'),
-    closePrompt: $('[data-close-prompt]'),
+    dialog: $('[data-faq-dialog]'),
+    faqBody: $('[data-faq-body]'),
+    closeFaq: $('[data-close-faq]'),
   };
 
   const ICONS = {
@@ -247,8 +245,6 @@
       else dot.removeAttribute('aria-current');
     });
     centerActiveDot();
-    els.openPrompt.hidden = !piece.promptHtml;
-    els.bottombar.hidden = els.dock.hidden && els.openPrompt.hidden;
     setGlow(piece.accent);
     document.title = `${piece.title} · llmart`;
     if (!initial) {
@@ -408,58 +404,22 @@
     return true;
   }
 
-  // ---- Prompt sheet ----
+  // ---- FAQ sheet ----
 
-  let copyTimer;
-
-  function setCopyLabel(text) {
-    els.copyPrompt.textContent = text;
-  }
-
-  function openPrompt() {
-    const piece = pieces[index];
-    if (!piece?.promptHtml || els.dialog.open) return;
-    els.promptTitle.textContent = piece.title;
-    els.promptBody.innerHTML = piece.promptHtml;
-    els.dialog.style.setProperty('--accent-rgb', hexToRgb(piece.accent));
-    clearTimeout(copyTimer);
-    setCopyLabel('Copy prompt');
+  function openFaq() {
+    if (els.dialog.open) return;
+    // Tinted with the colour of the piece on show.
+    els.dialog.style.setProperty('--accent-rgb', hexToRgb(pieces[index].accent));
+    els.faqBody.scrollTop = 0;
     els.dialog.showModal();
   }
 
-  async function copyText(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      // Clipboard API unavailable (insecure context) or denied: fall back to a selection copy.
-      const area = el('textarea', 'visually-hidden');
-      area.value = text;
-      els.dialog.append(area);
-      area.select();
-      let copied = false;
-      try {
-        copied = document.execCommand('copy');
-      } catch {
-        copied = false;
-      }
-      area.remove();
-      return copied;
-    }
-  }
-
-  function setupPrompt() {
-    els.openPrompt.addEventListener('click', openPrompt);
-    els.closePrompt.addEventListener('click', () => els.dialog.close());
+  function setupFaq() {
+    els.openFaq.addEventListener('click', openFaq);
+    els.closeFaq.addEventListener('click', () => els.dialog.close());
     // Clicks on the backdrop land on the <dialog> itself; clicks in the panel don't.
     els.dialog.addEventListener('click', (event) => {
       if (event.target === els.dialog) els.dialog.close();
-    });
-    els.copyPrompt.addEventListener('click', async () => {
-      const copied = await copyText(pieces[index].promptText);
-      setCopyLabel(copied ? 'Copied' : 'Copy failed');
-      clearTimeout(copyTimer);
-      copyTimer = setTimeout(() => setCopyLabel('Copy prompt'), 1800);
     });
   }
 
@@ -485,6 +445,8 @@
     }
     els.counter.hidden = false;
     els.dock.hidden = pieces.length < 2;
+    els.openFaq.hidden = els.faqBody.childElementCount === 0; // no faq.md
+    els.bottombar.hidden = els.dock.hidden && els.openFaq.hidden;
     buildDots();
     els.prev.addEventListener('click', prev);
     els.next.addEventListener('click', next);
@@ -500,7 +462,7 @@
     window.addEventListener('resize', relayout);
     document.fonts?.ready.then(relayout);
     setupSwipe();
-    setupPrompt();
+    setupFaq();
     els.viewport.addEventListener('click', onViewportClick);
     const start = indexFromHash();
     go(start === -1 ? 0 : start, 0, { initial: true });

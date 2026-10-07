@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { GalleryError, parseOverrides, planGallery } from '../scripts/lib/gallery.mjs';
+import { fillFaq, GalleryError, parseOverrides, planGallery } from '../scripts/lib/gallery.mjs';
 
 const images = ['Claude Opus 5.5 - Self Portrait.png', 'Deepseek v4 Flash.png', 'kimi-k3-self-portrait.png'];
 const galleryError = (pattern) => (error) => error instanceof GalleryError && pattern.test(error.message);
@@ -35,6 +35,7 @@ test('parseOverrides names unknown files and suggests a case-insensitive match',
 
 test('parseOverrides rejects unknown fields, wrong types and non-object entries', () => {
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "caption": "x" } }', images), galleryError(/unknown field "caption"/));
+  assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "model": "x" } }', images), galleryError(/unknown field "model"/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "order": "1" } }', images), galleryError(/"order" must be a number/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "stealth": "yes" } }', images), galleryError(/"stealth" must be a boolean/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": "DeepSeek" }', images), galleryError(/must be an object/));
@@ -47,7 +48,7 @@ test('planGallery derives captions, sorts alphabetically and assigns slugs', () 
     ['Deepseek v4 Flash', null, 'deepseek-v4-flash'],
     ['Kimi K3 Self Portrait', null, 'kimi-k3-self-portrait'],
   ]);
-  assert.deepEqual(Object.keys(pieces[0]).sort(), ['file', 'prompt', 'slug', 'stealth', 'subtitle', 'thoughts', 'title']);
+  assert.deepEqual(Object.keys(pieces[0]).sort(), ['file', 'slug', 'stealth', 'subtitle', 'thoughts', 'title']);
 });
 
 test('planGallery marks stealth pieces from overrides; everything else is not stealth', () => {
@@ -92,53 +93,15 @@ test('planGallery de-duplicates colliding slugs', () => {
   assert.deepEqual(pieces.map((p) => p.slug), ['a-b', 'a-b-2', 'a-b-2-2']);
 });
 
-test('planGallery resolves shared vs per-image prompts and fills {{model}} with the final title', () => {
-  const pieces = planGallery({
-    images,
-    overrides: { 'kimi-k3-self-portrait.png': { title: 'Kimi K3' } },
-    sharedPrompt: 'Paint you, {{model}}, as {{ model }} sees it.\n',
-    sidecars: [{ file: 'Deepseek v4 Flash.prompt.md', name: 'Deepseek v4 Flash', kind: 'prompt', text: 'Custom for {{model}}' }],
-  });
-  assert.deepEqual(pieces.map((p) => p.prompt), [
-    'Paint you, Claude Opus 5.5, as Claude Opus 5.5 sees it.',
-    'Custom for Deepseek v4 Flash',
-    'Paint you, Kimi K3, as Kimi K3 sees it.',
-  ]);
-});
-
-test('planGallery fills {{model}} from the model override when the title is not the model name', () => {
-  const overrides = parseOverrides(
-    '{ "(Old) Claude Opus 5.5 - Self Portrait.png": { "model": "Claude Opus 5.5" } }',
-    ['(Old) Claude Opus 5.5 - Self Portrait.png'],
-  );
-  const [piece] = planGallery({
-    images: ['(Old) Claude Opus 5.5 - Self Portrait.png'],
-    overrides,
-    sharedPrompt: 'you, {{model}} would look like',
-  });
-  assert.equal(piece.title, '(Old) Claude Opus 5.5');
-  assert.equal(piece.prompt, 'you, Claude Opus 5.5 would look like');
-});
-
-test('planGallery inserts titles containing $ patterns literally', () => {
-  const [piece] = planGallery({
-    images: ['x.png'],
-    overrides: { 'x.png': { title: 'Cash $& $1' } },
-    sharedPrompt: 'Hi {{model}}',
-  });
-  assert.equal(piece.prompt, 'Hi Cash $& $1');
-});
-
 test('planGallery attaches thoughts and treats blank text as absent', () => {
   const pieces = planGallery({
     images: ['a.png', 'b.png'],
-    sharedPrompt: '   ',
     sidecars: [
       { file: 'a.thoughts.md', name: 'a', kind: 'thoughts', text: '\uFEFFI see **light**.\n' },
       { file: 'b.thoughts.md', name: 'b', kind: 'thoughts', text: ' \n ' },
     ],
   });
-  assert.deepEqual(pieces.map((p) => [p.thoughts, p.prompt]), [['I see **light**.', null], [null, null]]);
+  assert.deepEqual(pieces.map((p) => p.thoughts), ['I see **light**.', null]);
 });
 
 test('planGallery rejects a sidecar with no matching image', () => {
@@ -164,4 +127,24 @@ test('planGallery rejects two thoughts files for the same image', () => {
 
 test('planGallery returns an empty list for no images', () => {
   assert.deepEqual(planGallery({ images: [] }), []);
+});
+
+test('fillFaq returns null when faq.md is missing or blank', () => {
+  assert.equal(fillFaq(null, 'prompt'), null);
+  assert.equal(fillFaq(' \n', 'prompt'), null);
+});
+
+test('fillFaq fills {{prompt}} from prompt.md, naming no model in particular', () => {
+  const faq = fillFaq('\uFEFF## What was the prompt?\n\n{{ prompt }}\n', 'Paint you, {{model}}, as {{ model }} sees it.\n');
+  assert.equal(faq, '## What was the prompt?\n\nPaint you, <model name>, as <model name> sees it.');
+});
+
+test('fillFaq keeps a quoted {{prompt}} quoted across every line of the prompt', () => {
+  assert.equal(fillFaq('Q\n\n> {{prompt}}', 'One\n\nTwo $&'), 'Q\n\n> One\n> \n> Two $&');
+  assert.equal(fillFaq('It said "{{prompt}}".', 'Hi'), 'It said "Hi".');
+});
+
+test('fillFaq needs prompt.md only when the FAQ uses {{prompt}}', () => {
+  assert.equal(fillFaq('## Who paints these?\n\nThe {{model}}s.', null), '## Who paints these?\n\nThe <model name>s.');
+  assert.throws(() => fillFaq('> {{prompt}}', '  '), galleryError(/faq\.md uses \{\{prompt\}\}.*prompt\.md/));
 });

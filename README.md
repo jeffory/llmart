@@ -17,7 +17,6 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
 2. **Optional extras**, named after the image (same name, different ending):
    - `images/<name>.txt` — the model's thoughts, written on the back of the card
      (Markdown works: `- lists`, `**bold**`). `<name>.thoughts.md` works too.
-   - `images/<name>.prompt.md` — only if this piece's prompt differs from `prompt.md`.
    - Anything else in `images/` (like `.xuan` sources) is ignored by the site.
 
 3. **Commit and push to `main`.** On GitHub this works entirely in the browser:
@@ -33,16 +32,17 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
 
 - `title`, `subtitle` (`""` removes it) and `order` (lower numbers first; pieces without
   one follow alphabetically).
-- `model`: the name used for `{{model}}` in the prompt, when the title isn't simply the
-  model's name (e.g. `"(Old) Claude Opus 5.5"` → `"model": "Claude Opus 5.5"`).
 - `stealth`: `true` for a model tested anonymously before release; its caption gets a
   **Stealth** label.
 - Keys must match the filename exactly. If one doesn't, the build fails and tells you which.
 
-## The shared prompt — `prompt.md`
+## The FAQ — `faq.md`
 
-Shown on every piece under the **Prompt** link (bottom right). `{{model}}` is replaced with the piece's title
-(or its `model` from `gallery.json`). A piece with its own `images/<name>.prompt.md` shows that instead.
+Opens from the **FAQ** link at the bottom of the page. Each `## heading` is a question and the
+text below it is the answer (Markdown works).
+
+`{{prompt}}` inserts the prompt from `prompt.md`, with its `{{model}}` shown as `<model name>`.
+Write it as `> {{prompt}}` to set it apart as a quote.
 
 ## Local development
 

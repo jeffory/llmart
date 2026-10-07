@@ -37,6 +37,7 @@ const files = {
   'images/Wide Piece - Landscape.thoughts.md': 'Short fixture thoughts for a wide piece.',
   'images/Square Piece.png': artwork(1200, 1200, COLORS[2]),
   'prompt.md': 'Fixture prompt: paint what you think you, {{model}}, would look like.',
+  'faq.md': '## What prompt did the models get?\n\n> {{prompt}}\n\n## A second question?\n\nA short fixture answer.',
   'gallery.json': JSON.stringify({
     'Tall Piece - Self Portrait.png': { order: 1 },
     'Wide Piece - Landscape.png': { order: 2 },

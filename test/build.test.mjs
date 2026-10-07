@@ -29,6 +29,12 @@ function readManifest(html) {
   return JSON.parse(match[1]);
 }
 
+function readFaq(html) {
+  const match = html.match(/<div class="sheet__body faq" data-faq-body>(.*?)<\/div>/s);
+  assert.ok(match, 'index.html should have the FAQ body');
+  return match[1];
+}
+
 const galleryError = (pattern) => (error) => error instanceof GalleryError && pattern.test(error.message);
 
 test('build writes the page, optimized images, data and cache headers', async (t) => {
@@ -37,18 +43,23 @@ test('build writes the page, optimized images, data and cache headers', async (t
     'images/small.png': png(300, 200, { r: 220, g: 40, b: 90 }),
     'images/small.txt': 'I am **small**.',
     'prompt.md': 'Paint {{model}} $& </script>',
+    'faq.md': '## What was the prompt?\n\n> {{prompt}}',
     'gallery.json': JSON.stringify({ 'small.png': { title: 'Small One', order: 1, stealth: true } }),
   });
 
   const manifest = await build({ root, outDir, log: silent });
-  const pieces = readManifest(await readFile(path.join(outDir, 'index.html'), 'utf8'));
+  const html = await readFile(path.join(outDir, 'index.html'), 'utf8');
+  const pieces = readManifest(html);
   assert.deepEqual(pieces, manifest);
+  assert.match(
+    readFaq(html),
+    /^<h2>What was the prompt\?<\/h2>\s*<blockquote>\s*<p>Paint &lt;model name&gt; \$&amp; &lt;\/script&gt;<\/p>\s*<\/blockquote>\s*$/,
+  );
   assert.deepEqual(pieces.map((p) => p.title), ['Small One', 'Tall Piece']);
 
   const [small, tall] = pieces;
   assert.equal(small.thoughtsHtml.trim(), '<p>I am <strong>small</strong>.</p>');
-  assert.equal(small.promptText, 'Paint Small One $& </script>');
-  assert.match(small.promptHtml, /Paint Small One \$&amp; &lt;\/script&gt;/);
+  assert.equal(small.promptHtml, undefined);
   assert.equal(tall.subtitle, 'Self Portrait');
   assert.deepEqual([small.stealth, tall.stealth], [true, false]);
   assert.equal(tall.thoughtsHtml, null);
@@ -98,5 +109,7 @@ test('build with no images writes an empty gallery', async (t) => {
   const { root, outDir } = await fixture(t, {});
   const manifest = await build({ root, outDir, log: silent });
   assert.deepEqual(manifest, []);
-  assert.deepEqual(readManifest(await readFile(path.join(outDir, 'index.html'), 'utf8')), []);
+  const html = await readFile(path.join(outDir, 'index.html'), 'utf8');
+  assert.deepEqual(readManifest(html), []);
+  assert.equal(readFaq(html), '', 'no faq.md means an empty FAQ');
 });

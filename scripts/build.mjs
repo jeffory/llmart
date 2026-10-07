@@ -1,11 +1,11 @@
-// Builds dist/ from images/, gallery.json, prompt.md and src/.
+// Builds dist/ from images/, gallery.json, faq.md, prompt.md and src/.
 // Usage: node scripts/build.mjs [root] [outDir]
 import { createHash } from 'node:crypto';
 import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
-import { classifyFiles, GalleryError, htmlSafeJson, parseOverrides, pickAccent, planGallery } from './lib/gallery.mjs';
+import { classifyFiles, fillFaq, GalleryError, htmlSafeJson, parseOverrides, pickAccent, planGallery } from './lib/gallery.mjs';
 import { renderMarkdown } from './lib/markdown.mjs';
 
 const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -14,6 +14,7 @@ const WEBP_QUALITY = 82;
 // Part of every image hash, so changing encoder settings busts caches.
 const ENCODER_ID = `webp:q${WEBP_QUALITY}:edge${MAX_EDGE}:v1`;
 const DATA_PLACEHOLDER = '<!-- GALLERY_DATA -->';
+const FAQ_PLACEHOLDER = '<!-- FAQ -->';
 const HEADERS = '/img/*\n  Cache-Control: public, max-age=31536000, immutable\n';
 
 export async function build({
@@ -28,7 +29,7 @@ export async function build({
     const files = unsupported.map((file) => `images/${file}`).join(', ');
     throw new GalleryError(`Unsupported image format: ${files}. Convert to PNG, JPG, WebP or AVIF.`);
   }
-  for (const file of ignored) log(`  skipping images/${file} (not an image or a .txt/.thoughts.md/.prompt.md)`);
+  for (const file of ignored) log(`  skipping images/${file} (not an image or a .txt/.thoughts.md)`);
 
   const pieces = planGallery({
     images,
@@ -36,8 +37,8 @@ export async function build({
     sidecars: await Promise.all(
       sidecars.map(async (sidecar) => ({ ...sidecar, text: await readFile(path.join(imagesDir, sidecar.file), 'utf8') })),
     ),
-    sharedPrompt: await readOptional(path.join(root, 'prompt.md')),
   });
+  const faq = fillFaq(await readOptional(path.join(root, 'faq.md')), await readOptional(path.join(root, 'prompt.md')));
 
   await rm(outDir, { recursive: true, force: true });
   await mkdir(path.join(outDir, 'img'), { recursive: true });
@@ -51,18 +52,21 @@ export async function build({
       subtitle: piece.subtitle,
       stealth: piece.stealth,
       ...image,
-      promptHtml: piece.prompt && renderMarkdown(piece.prompt),
-      promptText: piece.prompt,
       thoughtsHtml: piece.thoughts && renderMarkdown(piece.thoughts),
     });
     log(`  ✓ images/${piece.file} → ${image.src} (${image.width}×${image.height})`);
   }
 
   const template = await readFile(path.join(srcDir, 'index.html'), 'utf8');
-  if (!template.includes(DATA_PLACEHOLDER)) throw new Error(`src/index.html is missing ${DATA_PLACEHOLDER}`);
+  for (const placeholder of [DATA_PLACEHOLDER, FAQ_PLACEHOLDER]) {
+    if (!template.includes(placeholder)) throw new Error(`src/index.html is missing ${placeholder}`);
+  }
   const dataTag = `<script type="application/json" id="gallery-data">${htmlSafeJson(manifest)}</script>`;
-  // Function replacer: "$&" in the data must not be treated as a replacement pattern.
-  await writeFile(path.join(outDir, 'index.html'), template.replace(DATA_PLACEHOLDER, () => dataTag));
+  // Function replacers: "$&" in the content must not be treated as a replacement pattern.
+  const page = template
+    .replace(DATA_PLACEHOLDER, () => dataTag)
+    .replace(FAQ_PLACEHOLDER, () => (faq ? renderMarkdown(faq).trim() : ''));
+  await writeFile(path.join(outDir, 'index.html'), page);
 
   const staticFiles = (await listFiles(srcDir)).filter((file) => file !== 'index.html');
   await Promise.all(staticFiles.map((file) => copyFile(path.join(srcDir, file), path.join(outDir, file))));

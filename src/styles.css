@@ -377,7 +377,7 @@ button {
   opacity: 0.75;
 }
 
-/* ---- Bottom bar: dock in the middle, prompt link on the right ---- */
+/* ---- Bottom bar: dock in the middle, FAQ link on the right ---- */
 
 .bottombar {
   position: relative;
@@ -390,7 +390,7 @@ button {
   padding: 14px max(24px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
 }
 
-.prompt-link {
+.faq-link {
   grid-column: 3;
   justify-self: end;
   padding: 2px 0;
@@ -408,7 +408,7 @@ button {
     text-decoration-color 0.25s;
 }
 
-.prompt-link:hover {
+.faq-link:hover {
   color: var(--text);
   text-decoration-color: currentColor;
 }
@@ -432,11 +432,11 @@ button {
   }
 
   .dock,
-  .prompt-link {
+  .faq-link {
     grid-column: 1;
   }
 
-  .prompt-link {
+  .faq-link {
     justify-self: center;
   }
 }
@@ -851,7 +851,7 @@ button {
 }
 
 .sheet__body {
-  padding: 4px 28px 8px;
+  padding: 4px 28px 28px;
   overflow-y: auto;
   overscroll-behavior: contain;
   color: #d1d1d6;
@@ -872,10 +872,41 @@ button {
   margin: 0 0 0.9em;
 }
 
-.sheet__footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 18px 24px 24px;
+/* FAQ: each "## heading" in faq.md is a question. */
+.faq {
+  padding-top: 12px;
+}
+
+.faq :is(h2, h3) {
+  margin: 1.5em 0 0.4em;
+  color: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+}
+
+/* A quote, like the prompt, set apart in the piece's colour. */
+.faq blockquote {
+  margin: 0 0 0.9em;
+  padding: 12px 16px;
+  border-left: 2px solid rgb(var(--accent-rgb, 245 245 247) / 0.7);
+  border-radius: 0 10px 10px 0;
+  background: rgb(255 255 255 / 0.05);
+  color: #e8e5df;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.faq blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.faq a {
+  color: inherit;
+  text-decoration-color: rgb(var(--accent-rgb, 245 245 247));
 }
 
 .icon-button {

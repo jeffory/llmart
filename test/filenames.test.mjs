@@ -20,11 +20,10 @@ test('classifyFiles sorts files into images, sidecars, unsupported and ignored',
   assert.deepEqual(result.images, ['a.png', 'B.JPG', 'c.webp', 'd.avif', 'e.jpeg']);
   assert.deepEqual(result.sidecars, [
     { file: 'a.thoughts.md', name: 'a', kind: 'thoughts' },
-    { file: 'a.Prompt.MD', name: 'a', kind: 'prompt' },
     { file: 'B.txt', name: 'B', kind: 'thoughts' },
   ]);
   assert.deepEqual(result.unsupported, ['IMG_0001.HEIC', 'loop.gif']);
-  assert.deepEqual(result.ignored, ['a.xuan']);
+  assert.deepEqual(result.ignored, ['a.Prompt.MD', 'a.xuan']);
 });
 
 test('captionFromFilename splits title and subtitle on the first " - "', () => {
