@@ -22,6 +22,11 @@
     counterTotal: $('[data-counter-total]'),
     live: $('[data-live]'),
     glowLayers: [...document.querySelectorAll('.ambient__layer')],
+    dialog: $('[data-prompt-dialog]'),
+    promptTitle: $('[data-prompt-title]'),
+    promptBody: $('[data-prompt-body]'),
+    copyPrompt: $('[data-copy-prompt]'),
+    closePrompt: $('[data-close-prompt]'),
   };
 
   const ICONS = {
@@ -337,13 +342,17 @@
   }
 
   function onKeydown(event) {
-    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || els.dialog.open) return;
     if (event.key === 'ArrowRight') {
       event.preventDefault();
       next();
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
       prev();
+    } else if ((event.key === 'f' || event.key === 'F') && !event.repeat) {
+      if (setFlipped(!isFlipped())) event.preventDefault();
+    } else if (event.key === 'Escape' && isFlipped()) {
+      setFlipped(false);
     }
   }
 
@@ -354,6 +363,86 @@
     } catch {
       return -1;
     }
+  }
+
+  // ---- Thoughts (card flip) ----
+
+  function isFlipped() {
+    return Boolean(current?.classList.contains('is-flipped'));
+  }
+
+  function setFlipped(flipped) {
+    if (!current || !pieces[index].thoughtsHtml) return false;
+    const card = current.querySelector('.piece__frame .card');
+    const pillButton = current.querySelector('[data-action="flip"]');
+    // Don't strand keyboard focus inside the face that is about to become inert.
+    if (!flipped && card.contains(document.activeElement)) pillButton.focus();
+    current.classList.toggle('is-flipped', flipped);
+    card.querySelector('.card__face--front').inert = flipped;
+    card.querySelector('.card__face--back').inert = !flipped;
+    pillButton.querySelector('.pill__label').textContent = flipped ? 'Artwork' : 'Thoughts';
+    return true;
+  }
+
+  // ---- Prompt sheet ----
+
+  let copyTimer;
+
+  function setCopyLabel(text) {
+    els.copyPrompt.textContent = text;
+  }
+
+  function openPrompt() {
+    const piece = pieces[index];
+    if (!piece?.promptHtml || els.dialog.open) return;
+    els.promptTitle.textContent = piece.title;
+    els.promptBody.innerHTML = piece.promptHtml;
+    els.dialog.style.setProperty('--accent-rgb', hexToRgb(piece.accent));
+    clearTimeout(copyTimer);
+    setCopyLabel('Copy prompt');
+    els.dialog.showModal();
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Clipboard API unavailable (insecure context) or denied: fall back to a selection copy.
+      const area = el('textarea', 'visually-hidden');
+      area.value = text;
+      els.dialog.append(area);
+      area.select();
+      let copied = false;
+      try {
+        copied = document.execCommand('copy');
+      } catch {
+        copied = false;
+      }
+      area.remove();
+      return copied;
+    }
+  }
+
+  function setupPrompt() {
+    els.closePrompt.addEventListener('click', () => els.dialog.close());
+    // Clicks on the backdrop land on the <dialog> itself; clicks in the panel don't.
+    els.dialog.addEventListener('click', (event) => {
+      if (event.target === els.dialog) els.dialog.close();
+    });
+    els.copyPrompt.addEventListener('click', async () => {
+      const copied = await copyText(pieces[index].promptText);
+      setCopyLabel(copied ? 'Copied' : 'Copy failed');
+      clearTimeout(copyTimer);
+      copyTimer = setTimeout(() => setCopyLabel('Copy prompt'), 1800);
+    });
+  }
+
+  function onViewportClick(event) {
+    const action = event.target.closest('[data-action]')?.dataset.action;
+    if (action === 'prompt') openPrompt();
+    else if (action === 'flip') setFlipped(!isFlipped());
+    else if (event.target.closest('[data-front]')) setFlipped(true);
   }
 
   // ---- Start ----
@@ -387,6 +476,8 @@
     window.addEventListener('resize', relayout);
     document.fonts?.ready.then(relayout);
     setupSwipe();
+    setupPrompt();
+    els.viewport.addEventListener('click', onViewportClick);
     const start = indexFromHash();
     go(start === -1 ? 0 : start, 0, { initial: true });
   }
