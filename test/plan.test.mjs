@@ -95,6 +95,20 @@ test('planGallery resolves shared vs per-image prompts and fills {{model}} with 
   ]);
 });
 
+test('planGallery fills {{model}} from the model override when the title is not the model name', () => {
+  const overrides = parseOverrides(
+    '{ "(Old) Claude Opus 5.5 - Self Portrait.png": { "model": "Claude Opus 5.5" } }',
+    ['(Old) Claude Opus 5.5 - Self Portrait.png'],
+  );
+  const [piece] = planGallery({
+    images: ['(Old) Claude Opus 5.5 - Self Portrait.png'],
+    overrides,
+    sharedPrompt: 'you, {{model}} would look like',
+  });
+  assert.equal(piece.title, '(Old) Claude Opus 5.5');
+  assert.equal(piece.prompt, 'you, Claude Opus 5.5 would look like');
+});
+
 test('planGallery inserts titles containing $ patterns literally', () => {
   const [piece] = planGallery({
     images: ['x.png'],

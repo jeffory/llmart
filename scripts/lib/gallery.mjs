@@ -60,7 +60,8 @@ export function slugify(name) {
   return slug || 'piece';
 }
 
-const OVERRIDE_TYPES = { title: 'string', subtitle: 'string', order: 'number' };
+// `model` names the model for {{model}} in prompts when the title isn't just the model's name.
+const OVERRIDE_TYPES = { title: 'string', subtitle: 'string', model: 'string', order: 'number' };
 const MODEL_PLACEHOLDER = /\{\{\s*model\s*\}\}/g;
 const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
@@ -95,7 +96,7 @@ export function parseOverrides(text, imageFiles) {
     for (const [key, value] of Object.entries(entry)) {
       const type = OVERRIDE_TYPES[key];
       if (!type) {
-        throw new GalleryError(`gallery.json → "${file}": unknown field "${key}" (allowed: title, subtitle, order).`);
+        throw new GalleryError(`gallery.json → "${file}": unknown field "${key}" (allowed: title, subtitle, model, order).`);
       }
       if (typeof value !== type || (type === 'number' && !Number.isFinite(value))) {
         throw new GalleryError(`gallery.json → "${file}": "${key}" must be a ${type}.`);
@@ -131,13 +132,14 @@ export function planGallery({ images, overrides = {}, sidecars = [], sharedPromp
     const title = override.title?.trim() || caption.title;
     const subtitle = override.subtitle === undefined ? caption.subtitle : override.subtitle.trim() || null;
     const prompt = cleanText(own.prompt) ?? shared;
+    const model = override.model?.trim() || title;
     return {
       file,
       title,
       subtitle,
       order: override.order ?? null,
       // Function replacer so "$&"-style sequences in titles are inserted literally.
-      prompt: prompt && prompt.replace(MODEL_PLACEHOLDER, () => title),
+      prompt: prompt && prompt.replace(MODEL_PLACEHOLDER, () => model),
       thoughts: cleanText(own.thoughts),
     };
   });
