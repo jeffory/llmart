@@ -34,6 +34,9 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
   one follow alphabetically).
 - `stealth`: `true` for a model tested anonymously before release; its caption gets a
   **Stealth** label.
+- `lowEffort`: `true` for a piece the model didn't seem to put a reasonable amount of effort
+  into. It gets a **Low effort** label and is hidden until a visitor turns on
+  **Show low-effort pieces** in the settings (the gear next to the counter).
 - Keys must match the filename exactly. If one doesn't, the build fails and tells you which.
 
 ## The FAQ — `faq.md`

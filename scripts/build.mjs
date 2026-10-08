@@ -51,6 +51,7 @@ export async function build({
       title: piece.title,
       subtitle: piece.subtitle,
       stealth: piece.stealth,
+      lowEffort: piece.lowEffort,
       ...image,
       thoughtsHtml: piece.thoughts && renderMarkdown(piece.thoughts),
     });

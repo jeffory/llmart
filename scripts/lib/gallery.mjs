@@ -76,7 +76,8 @@ export function slugify(name) {
 }
 
 // `stealth` marks a model tested anonymously before release; its caption says so.
-const OVERRIDE_TYPES = { title: 'string', subtitle: 'string', order: 'number', stealth: 'boolean' };
+// `lowEffort` marks a piece the model didn't put much into; the site hides those by default.
+const OVERRIDE_TYPES = { title: 'string', subtitle: 'string', order: 'number', stealth: 'boolean', lowEffort: 'boolean' };
 const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
 const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -150,6 +151,7 @@ export function planGallery({ images, overrides = {}, sidecars = [] }) {
       subtitle,
       order: override.order ?? null,
       stealth: override.stealth === true,
+      lowEffort: override.lowEffort === true,
       thoughts: cleanText(own.thoughts),
     };
   });

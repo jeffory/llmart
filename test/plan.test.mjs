@@ -38,6 +38,7 @@ test('parseOverrides rejects unknown fields, wrong types and non-object entries'
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "model": "x" } }', images), galleryError(/unknown field "model"/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "order": "1" } }', images), galleryError(/"order" must be a number/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "stealth": "yes" } }', images), galleryError(/"stealth" must be a boolean/));
+  assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "lowEffort": 1 } }', images), galleryError(/"lowEffort" must be a boolean/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": "DeepSeek" }', images), galleryError(/must be an object/));
 });
 
@@ -48,13 +49,23 @@ test('planGallery derives captions, sorts alphabetically and assigns slugs', () 
     ['Deepseek v4 Flash', null, 'deepseek-v4-flash'],
     ['Kimi K3', 'Self-Portrait', 'kimi-k3-self-portrait'],
   ]);
-  assert.deepEqual(Object.keys(pieces[0]).sort(), ['file', 'slug', 'stealth', 'subtitle', 'thoughts', 'title']);
+  assert.deepEqual(Object.keys(pieces[0]).sort(), ['file', 'lowEffort', 'slug', 'stealth', 'subtitle', 'thoughts', 'title']);
 });
 
 test('planGallery marks stealth pieces from overrides; everything else is not stealth', () => {
   const overrides = parseOverrides('{ "Deepseek v4 Flash.png": { "stealth": true }, "kimi-k3-self-portrait.png": { "stealth": false } }', images);
   const pieces = planGallery({ images, overrides });
   assert.deepEqual(pieces.map((p) => [p.file, p.stealth]), [
+    ['Claude Opus 5.5 - Self-Portrait.png', false],
+    ['Deepseek v4 Flash.png', true],
+    ['kimi-k3-self-portrait.png', false],
+  ]);
+});
+
+test('planGallery marks low-effort pieces from overrides; everything else is not', () => {
+  const overrides = parseOverrides('{ "Deepseek v4 Flash.png": { "lowEffort": true }, "kimi-k3-self-portrait.png": { "lowEffort": false } }', images);
+  const pieces = planGallery({ images, overrides });
+  assert.deepEqual(pieces.map((p) => [p.file, p.lowEffort]), [
     ['Claude Opus 5.5 - Self-Portrait.png', false],
     ['Deepseek v4 Flash.png', true],
     ['kimi-k3-self-portrait.png', false],

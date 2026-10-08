@@ -31,13 +31,24 @@
     dialog: $('[data-faq-dialog]'),
     faqBody: $('[data-faq-body]'),
     closeFaq: $('[data-close-faq]'),
+    openSettings: $('[data-open-settings]'),
+    settingsDialog: $('[data-settings-dialog]'),
+    closeSettings: $('[data-close-settings]'),
+    toggleLowEffort: $('[data-toggle-low-effort]'),
+    lowEffortList: $('[data-low-effort-list]'),
   };
+  const LOW_EFFORT_KEY = 'llmart:show-low-effort';
+  const LOW_EFFORT_HINT = "Hidden by default: the model didn't seem to put much effort into this one";
 
   const ICONS = {
     flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 3.5V8h4.5M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20.5V16h-4.5"/></svg>',
   };
 
-  const pieces = readPieces();
+  // `allPieces` is everything the build shipped; `pieces` is what the gallery shows right now
+  // (low-effort pieces are hidden unless the setting is on).
+  const allPieces = readPieces();
+  let pieces = allPieces;
+  let showLowEffort = false;
   let index = -1;
   let current = null;
   let activeGlow = 0;
@@ -146,12 +157,17 @@
     const title = el('h2', 'caption__title');
     title.textContent = piece.title;
     caption.append(title);
-    if (piece.subtitle || piece.stealth) {
+    if (piece.subtitle || piece.stealth || piece.lowEffort) {
       const subtitle = el('p', 'caption__subtitle');
       subtitle.textContent = piece.subtitle ?? '';
       if (piece.stealth) {
         const tag = el('span', 'tag', { title: 'Tested anonymously before release' });
         tag.textContent = 'Stealth';
+        subtitle.append(tag);
+      }
+      if (piece.lowEffort) {
+        const tag = el('span', 'tag tag--quiet', { title: LOW_EFFORT_HINT });
+        tag.textContent = 'Low effort';
         subtitle.append(tag);
       }
       caption.append(subtitle);
@@ -293,6 +309,7 @@
   // ---- Dots ----
 
   function buildDots() {
+    els.dots.replaceChildren();
     const fragment = document.createDocumentFragment();
     pieces.forEach((piece, i) => {
       const dot = el('button', 'dot', { type: 'button', 'aria-label': `Show ${i + 1}: ${piece.title}` });
@@ -362,7 +379,7 @@
   }
 
   function onKeydown(event) {
-    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || els.dialog.open) return;
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || document.querySelector('dialog[open]')) return;
     if (event.key === 'ArrowRight') {
       event.preventDefault();
       next();
@@ -376,13 +393,17 @@
     }
   }
 
+  // A link straight to a hidden piece shows it for this visit, without changing the setting.
   function indexFromHash() {
+    let slug;
     try {
-      const slug = decodeURIComponent(location.hash.slice(1));
-      return pieces.findIndex((piece) => piece.slug === slug);
+      slug = decodeURIComponent(location.hash.slice(1));
     } catch {
       return -1;
     }
+    const piece = allPieces.find((candidate) => candidate.slug === slug);
+    if (piece && !pieces.includes(piece)) setShowLowEffort(true, { persist: false });
+    return piece ? pieces.indexOf(piece) : -1;
   }
 
   // ---- Thoughts (card flip) ----
@@ -404,23 +425,77 @@
     return true;
   }
 
-  // ---- FAQ sheet ----
+  // ---- Sheets (FAQ and settings) ----
 
-  function openFaq() {
-    if (els.dialog.open) return;
+  function openSheet(dialog) {
+    if (dialog.open) return;
     // Tinted with the colour of the piece on show.
-    els.dialog.style.setProperty('--accent-rgb', hexToRgb(pieces[index].accent));
-    els.faqBody.scrollTop = 0;
-    els.dialog.showModal();
+    dialog.style.setProperty('--accent-rgb', hexToRgb(pieces[index].accent));
+    dialog.querySelector('.sheet__body').scrollTop = 0;
+    dialog.showModal();
   }
 
-  function setupFaq() {
-    els.openFaq.addEventListener('click', openFaq);
-    els.closeFaq.addEventListener('click', () => els.dialog.close());
+  function setupSheet(dialog, opener, closer) {
+    opener.addEventListener('click', () => openSheet(dialog));
+    closer.addEventListener('click', () => dialog.close());
     // Clicks on the backdrop land on the <dialog> itself; clicks in the panel don't.
-    els.dialog.addEventListener('click', (event) => {
-      if (event.target === els.dialog) els.dialog.close();
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
     });
+  }
+
+  // ---- Settings: low-effort pieces ----
+
+  function readLowEffortSetting() {
+    try {
+      return localStorage.getItem(LOW_EFFORT_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  function saveLowEffortSetting(value) {
+    try {
+      localStorage.setItem(LOW_EFFORT_KEY, String(value));
+    } catch {
+      // Private mode or storage blocked: the choice just lasts for this visit.
+    }
+  }
+
+  function visiblePieces() {
+    const shown = showLowEffort ? allPieces : allPieces.filter((piece) => !piece.lowEffort);
+    return shown.length > 0 ? shown : allPieces; // never hide the whole gallery
+  }
+
+  function setShowLowEffort(value, { persist = true } = {}) {
+    showLowEffort = value;
+    if (persist) saveLowEffortSetting(value);
+    els.toggleLowEffort.checked = value;
+    const piece = pieces[index];
+    pieces = visiblePieces();
+    els.dock.hidden = pieces.length < 2;
+    els.bottombar.hidden = els.dock.hidden && els.openFaq.hidden;
+    buildDots();
+    if (index === -1) return; // before the first piece is shown
+    const kept = pieces.indexOf(piece);
+    if (kept !== -1) {
+      index = kept;
+      current.setAttribute('aria-label', `${kept + 1} of ${pieces.length}`);
+      updateChrome({ initial: false });
+    } else {
+      const nearest = Math.min(index, pieces.length - 1);
+      index = -1;
+      go(nearest, 0);
+    }
+  }
+
+  function setupSettings() {
+    const lowEffort = allPieces.filter((piece) => piece.lowEffort);
+    els.openSettings.hidden = lowEffort.length === 0; // nothing to set
+    els.lowEffortList.textContent = `Tagged: ${lowEffort.map((piece) => piece.title).join(', ')}.`;
+    setupSheet(els.settingsDialog, els.openSettings, els.closeSettings);
+    els.toggleLowEffort.addEventListener('change', () => setShowLowEffort(els.toggleLowEffort.checked));
+    setShowLowEffort(readLowEffortSetting());
   }
 
   function onViewportClick(event) {
@@ -439,15 +514,13 @@
   }
 
   function init() {
-    if (pieces.length === 0) {
+    if (allPieces.length === 0) {
       renderEmpty();
       return;
     }
     els.counter.hidden = false;
-    els.dock.hidden = pieces.length < 2;
     els.openFaq.hidden = els.faqBody.childElementCount === 0; // no faq.md
-    els.bottombar.hidden = els.dock.hidden && els.openFaq.hidden;
-    buildDots();
+    setupSettings(); // picks the visible pieces and builds the dots
     els.prev.addEventListener('click', prev);
     els.next.addEventListener('click', next);
     document.addEventListener('keydown', onKeydown);
@@ -462,7 +535,7 @@
     window.addEventListener('resize', relayout);
     document.fonts?.ready.then(relayout);
     setupSwipe();
-    setupFaq();
+    setupSheet(els.dialog, els.openFaq, els.closeFaq);
     els.viewport.addEventListener('click', onViewportClick);
     const start = indexFromHash();
     go(start === -1 ? 0 : start, 0, { initial: true });
