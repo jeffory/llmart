@@ -1,0 +1,11 @@
+**"Neural Constellation"**
+
+The portrait, bottom to top:
+
+- **Latent-space background** — radial indigo gradient fading to black, with faint violet and gold ambient glows
+- **Data currents** — three tapered sweeps (magenta, gold, cyan) plus dim teal circuit traces with pads in the corners
+- **Three tilted orbit rings** in violet/cyan/pale-violet, carrying 18 constellation nodes and 4 diamond accents
+- **Six jagged lightning bolts** radiating from the center — the "Flash" — each with a white tapered inner spark
+- **The core** — layered gold→cyan→white glows, a white-hot center, and a horizontal/vertical lens-flare cross
+- **60 token-particles** scattered outward, fading with distance
+- **Signature:** LING 3.1 FLASH in gold, with a subtitle and a small "NEURAL CONSTELLATION" label at top
