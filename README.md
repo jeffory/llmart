@@ -33,7 +33,7 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
 - `title`, `subtitle` (`""` removes it) and `order` (lower numbers first; pieces without
   one follow alphabetically).
 - `stealth`: `true` for a model tested anonymously before release; its caption gets a
-  **Stealth** label.
+  **Stealth** label, and visitors can hide stealth models from the settings (off by default).
 - `lowEffort`: `true` for a piece the model didn't seem to put a reasonable amount of effort
   into. It gets a **Low effort** label and is hidden until a visitor turns on
   **Show low-effort pieces** in the settings (the gear next to the counter).

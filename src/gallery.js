@@ -34,11 +34,19 @@
     openSettings: $('[data-open-settings]'),
     settingsDialog: $('[data-settings-dialog]'),
     closeSettings: $('[data-close-settings]'),
+    settingLowEffort: $('[data-setting-low-effort]'),
     toggleLowEffort: $('[data-toggle-low-effort]'),
     lowEffortList: $('[data-low-effort-list]'),
+    settingStealth: $('[data-setting-stealth]'),
+    toggleHideStealth: $('[data-toggle-hide-stealth]'),
+    stealthList: $('[data-stealth-list]'),
   };
-  const LOW_EFFORT_KEY = 'llmart:show-low-effort';
   const LOW_EFFORT_HINT = "Hidden by default: the model didn't seem to put much effort into this one";
+  // Each setting: its switch, where it's remembered, and whether a piece is hidden by it.
+  const SETTINGS = {
+    showLowEffort: { key: 'llmart:show-low-effort', toggle: 'toggleLowEffort', hides: (piece, on) => piece.lowEffort && !on },
+    hideStealth: { key: 'llmart:hide-stealth', toggle: 'toggleHideStealth', hides: (piece, on) => piece.stealth && on },
+  };
 
   const ICONS = {
     flip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 3.5V8h4.5M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20.5V16h-4.5"/></svg>',
@@ -48,7 +56,7 @@
   // (low-effort pieces are hidden unless the setting is on).
   const allPieces = readPieces();
   let pieces = allPieces;
-  let showLowEffort = false;
+  const settings = { showLowEffort: false, hideStealth: false };
   let index = -1;
   let current = null;
   let activeGlow = 0;
@@ -393,7 +401,7 @@
     }
   }
 
-  // A link straight to a hidden piece shows it for this visit, without changing the setting.
+  // A link straight to a hidden piece shows it for this visit, without changing the settings.
   function indexFromHash() {
     let slug;
     try {
@@ -402,7 +410,11 @@
       return -1;
     }
     const piece = allPieces.find((candidate) => candidate.slug === slug);
-    if (piece && !pieces.includes(piece)) setShowLowEffort(true, { persist: false });
+    if (piece && !pieces.includes(piece)) {
+      if (piece.lowEffort) settings.showLowEffort = true;
+      if (piece.stealth) settings.hideStealth = false;
+      applySettings();
+    }
     return piece ? pieces.indexOf(piece) : -1;
   }
 
@@ -444,33 +456,39 @@
     });
   }
 
-  // ---- Settings: low-effort pieces ----
+  // ---- Settings: which pieces to show ----
 
-  function readLowEffortSetting() {
+  function readSetting(key) {
     try {
-      return localStorage.getItem(LOW_EFFORT_KEY) === 'true';
+      return localStorage.getItem(key) === 'true';
     } catch {
       return false;
     }
   }
 
-  function saveLowEffortSetting(value) {
+  function saveSetting(key, value) {
     try {
-      localStorage.setItem(LOW_EFFORT_KEY, String(value));
+      localStorage.setItem(key, String(value));
     } catch {
       // Private mode or storage blocked: the choice just lasts for this visit.
     }
   }
 
   function visiblePieces() {
-    const shown = showLowEffort ? allPieces : allPieces.filter((piece) => !piece.lowEffort);
+    const hidden = (piece) => Object.entries(SETTINGS).some(([name, { hides }]) => hides(piece, settings[name]));
+    const shown = allPieces.filter((piece) => !hidden(piece));
     return shown.length > 0 ? shown : allPieces; // never hide the whole gallery
   }
 
-  function setShowLowEffort(value, { persist = true } = {}) {
-    showLowEffort = value;
-    if (persist) saveLowEffortSetting(value);
-    els.toggleLowEffort.checked = value;
+  function setSetting(name, value) {
+    settings[name] = value;
+    saveSetting(SETTINGS[name].key, value);
+    applySettings();
+  }
+
+  // Shows the pieces the settings allow, keeping the current piece on screen when it survives.
+  function applySettings() {
+    for (const [name, { toggle }] of Object.entries(SETTINGS)) els[toggle].checked = settings[name];
     const piece = pieces[index];
     pieces = visiblePieces();
     els.dock.hidden = pieces.length < 2;
@@ -490,12 +508,21 @@
   }
 
   function setupSettings() {
-    const lowEffort = allPieces.filter((piece) => piece.lowEffort);
-    els.openSettings.hidden = lowEffort.length === 0; // nothing to set
-    els.lowEffortList.textContent = `Tagged: ${lowEffort.map((piece) => piece.title).join(', ')}.`;
+    const titles = (flag) => allPieces.filter((piece) => piece[flag]).map((piece) => piece.title);
+    const lowEffort = titles('lowEffort');
+    const stealth = titles('stealth');
+    // Each row only appears when it has something to act on; no rows, no gear.
+    els.settingLowEffort.hidden = lowEffort.length === 0;
+    els.settingStealth.hidden = stealth.length === 0;
+    els.openSettings.hidden = els.settingLowEffort.hidden && els.settingStealth.hidden;
+    els.lowEffortList.textContent = `Tagged: ${lowEffort.join(', ')}.`;
+    els.stealthList.textContent = `Stealth: ${stealth.join(', ')}.`;
     setupSheet(els.settingsDialog, els.openSettings, els.closeSettings);
-    els.toggleLowEffort.addEventListener('change', () => setShowLowEffort(els.toggleLowEffort.checked));
-    setShowLowEffort(readLowEffortSetting());
+    for (const [name, { key, toggle }] of Object.entries(SETTINGS)) {
+      settings[name] = readSetting(key);
+      els[toggle].addEventListener('change', () => setSetting(name, els[toggle].checked));
+    }
+    applySettings();
   }
 
   function onViewportClick(event) {

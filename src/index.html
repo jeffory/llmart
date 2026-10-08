@@ -89,7 +89,7 @@
           </button>
         </header>
         <div class="sheet__body settings">
-          <label class="setting">
+          <label class="setting" data-setting-low-effort>
             <span class="setting__text">
               <span class="setting__label">Show low-effort pieces</span>
               <span class="setting__hint">
@@ -99,6 +99,17 @@
               </span>
             </span>
             <input class="switch" type="checkbox" role="switch" data-toggle-low-effort />
+          </label>
+          <label class="setting" data-setting-stealth>
+            <span class="setting__text">
+              <span class="setting__label">Hide stealth models</span>
+              <span class="setting__hint">
+                A stealth model is tested anonymously under a codename before release, so which
+                model painted it isn't known for sure.
+                <strong data-stealth-list></strong>
+              </span>
+            </span>
+            <input class="switch" type="checkbox" role="switch" data-toggle-hide-stealth />
           </label>
         </div>
       </div>

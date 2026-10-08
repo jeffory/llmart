@@ -971,6 +971,12 @@ button {
   cursor: pointer;
 }
 
+.setting + .setting {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+
 .setting__text {
   display: flex;
   flex-direction: column;
