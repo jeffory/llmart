@@ -39,7 +39,7 @@ const galleryError = (pattern) => (error) => error instanceof GalleryError && pa
 
 test('build writes the page, optimized images, data and cache headers', async (t) => {
   const { root, outDir } = await fixture(t, {
-    'images/Tall Piece - Self Portrait.png': png(1200, 2400, { r: 30, g: 160, b: 220 }),
+    'images/Tall Piece - Self-Portrait.png': png(1200, 2400, { r: 30, g: 160, b: 220 }),
     'images/small.png': png(300, 200, { r: 220, g: 40, b: 90 }),
     'images/small.txt': 'I am **small**.',
     'prompt.md': 'Paint {{model}} $& </script>',
@@ -60,7 +60,7 @@ test('build writes the page, optimized images, data and cache headers', async (t
   const [small, tall] = pieces;
   assert.equal(small.thoughtsHtml.trim(), '<p>I am <strong>small</strong>.</p>');
   assert.equal(small.promptHtml, undefined);
-  assert.equal(tall.subtitle, 'Self Portrait');
+  assert.equal(tall.subtitle, 'Self-Portrait');
   assert.deepEqual([small.stealth, tall.stealth], [true, false]);
   assert.equal(tall.thoughtsHtml, null);
   assert.deepEqual([tall.width, tall.height], [800, 1600]);

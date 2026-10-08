@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { captionFromFilename, classifyFiles, slugify, splitExtension } from '../scripts/lib/gallery.mjs';
 
 test('splitExtension lowercases the extension and keeps dotted names intact', () => {
-  assert.deepEqual(splitExtension('Claude Opus 5.5 - Self Portrait.PNG'), {
-    name: 'Claude Opus 5.5 - Self Portrait',
+  assert.deepEqual(splitExtension('Claude Opus 5.5 - Self-Portrait.PNG'), {
+    name: 'Claude Opus 5.5 - Self-Portrait',
     ext: '.png',
   });
   assert.deepEqual(splitExtension('README'), { name: 'README', ext: '' });
@@ -27,11 +27,25 @@ test('classifyFiles sorts files into images, sidecars, unsupported and ignored',
 });
 
 test('captionFromFilename splits title and subtitle on the first " - "', () => {
-  assert.deepEqual(captionFromFilename('Claude Opus 5.5 - Self Portrait.png'), {
+  assert.deepEqual(captionFromFilename('Claude Opus 5.5 - Self-Portrait.png'), {
     title: 'Claude Opus 5.5',
-    subtitle: 'Self Portrait',
+    subtitle: 'Self-Portrait',
   });
   assert.deepEqual(captionFromFilename('A - B - C.png'), { title: 'A', subtitle: 'B - C' });
+});
+
+test('captionFromFilename spells the Self-Portrait subtitle one way, however the file spells it', () => {
+  for (const spelling of ['Self Portrait', 'self-portrait', 'SELF PORTRAIT', 'SelfPortrait']) {
+    assert.deepEqual(captionFromFilename(`Opus 5.5 - ${spelling}.png`), { title: 'Opus 5.5', subtitle: 'Self-Portrait' }, spelling);
+  }
+  assert.deepEqual(captionFromFilename('Opus 5.5 - Self-Portrait 2.png'), { title: 'Opus 5.5', subtitle: 'Self-Portrait 2' });
+});
+
+test('captionFromFilename finds a trailing Self-Portrait even without the " - " separator', () => {
+  assert.deepEqual(captionFromFilename('Fable 5.1 Self-Portrait.png'), { title: 'Fable 5.1', subtitle: 'Self-Portrait' });
+  assert.deepEqual(captionFromFilename('Fable 5.1 self portrait.png'), { title: 'Fable 5.1', subtitle: 'Self-Portrait' });
+  assert.deepEqual(captionFromFilename('Self Portrait.png'), { title: 'Self Portrait', subtitle: null });
+  assert.deepEqual(captionFromFilename('Self-Portrait Study.png'), { title: 'Self-Portrait Study', subtitle: null });
 });
 
 test('captionFromFilename keeps typed casing when the name has spaces', () => {
@@ -39,12 +53,13 @@ test('captionFromFilename keeps typed casing when the name has spaces', () => {
 });
 
 test('captionFromFilename turns hyphen/underscore names into title case', () => {
-  assert.deepEqual(captionFromFilename('kimi-k3-self-portrait.png'), { title: 'Kimi K3 Self Portrait', subtitle: null });
+  assert.deepEqual(captionFromFilename('kimi-k3-self-portrait.png'), { title: 'Kimi K3', subtitle: 'Self-Portrait' });
   assert.deepEqual(captionFromFilename('night_owl__study.JPG'), { title: 'Night Owl Study', subtitle: null });
 });
 
 test('slugify makes URL-safe slugs and never returns an empty string', () => {
-  assert.equal(slugify('Claude Opus 5.5 - Self Portrait'), 'claude-opus-5-5-self-portrait');
+  assert.equal(slugify('Claude Opus 5.5 - Self-Portrait'), 'claude-opus-5-5-self-portrait');
+  assert.equal(slugify('Fable 5.1 Self-Portrait'), slugify('Fable 5.1 - Self-Portrait'));
   assert.equal(slugify('Café Crème'), 'cafe-creme');
   assert.equal(slugify('通义千问'), 'piece');
 });

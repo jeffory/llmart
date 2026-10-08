@@ -35,6 +35,12 @@ export function classifyFiles(filenames) {
   return { images, sidecars, unsupported, ignored };
 }
 
+// The gallery's standard subtitle. Files may spell it "Self Portrait", "self-portrait" or
+// "SelfPortrait", with or without a " - " before it; the caption always reads "Self-Portrait".
+const SELF_PORTRAIT = 'Self-Portrait';
+const SELF_PORTRAIT_SUBTITLE = /^self[\s-]*portrait$/i;
+const TRAILING_SELF_PORTRAIT = /\s+self[\s-]*portrait$/i;
+
 export function captionFromFilename(filename) {
   let { name } = splitExtension(filename);
   if (!name.includes(' ')) {
@@ -44,11 +50,19 @@ export function captionFromFilename(filename) {
       .replace(/(^|\s)(\S)/g, (_, space, letter) => space + letter.toUpperCase());
   }
   const separator = name.indexOf(' - ');
-  if (separator === -1) return { title: name.trim(), subtitle: null };
-  return {
-    title: name.slice(0, separator).trim(),
-    subtitle: name.slice(separator + 3).trim() || null,
-  };
+  if (separator !== -1) {
+    const subtitle = name.slice(separator + 3).trim() || null;
+    return {
+      title: name.slice(0, separator).trim(),
+      subtitle: subtitle && SELF_PORTRAIT_SUBTITLE.test(subtitle) ? SELF_PORTRAIT : subtitle,
+    };
+  }
+  const title = name.trim();
+  const trailing = title.match(TRAILING_SELF_PORTRAIT);
+  if (trailing && trailing.index > 0) {
+    return { title: title.slice(0, trailing.index).trim(), subtitle: SELF_PORTRAIT };
+  }
+  return { title, subtitle: null };
 }
 
 export function slugify(name) {

@@ -10,7 +10,7 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
 
    | Filename | Caption |
    |---|---|
-   | `Kimi K3 - Self Portrait.png` | **Kimi K3** · Self Portrait |
+   | `Kimi K3 - Self-Portrait.png` | **Kimi K3** · Self-Portrait |
    | `Space Bunny.png` | **Space Bunny** |
    | `night-owl-study.png` | **Night Owl Study** |
 
@@ -26,7 +26,7 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
 
 ```json
 {
-  "Opus 5.5 - Self Portrait.png": { "title": "Claude Opus 5.5", "order": 1 }
+  "Opus 5.5 - Self-Portrait.png": { "title": "Claude Opus 5.5", "order": 1 }
 }
 ```
 

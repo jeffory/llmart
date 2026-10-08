@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fillFaq, GalleryError, parseOverrides, planGallery } from '../scripts/lib/gallery.mjs';
 
-const images = ['Claude Opus 5.5 - Self Portrait.png', 'Deepseek v4 Flash.png', 'kimi-k3-self-portrait.png'];
+const images = ['Claude Opus 5.5 - Self-Portrait.png', 'Deepseek v4 Flash.png', 'kimi-k3-self-portrait.png'];
 const galleryError = (pattern) => (error) => error instanceof GalleryError && pattern.test(error.message);
 
 test('parseOverrides treats missing or blank gallery.json as no overrides', () => {
@@ -44,9 +44,9 @@ test('parseOverrides rejects unknown fields, wrong types and non-object entries'
 test('planGallery derives captions, sorts alphabetically and assigns slugs', () => {
   const pieces = planGallery({ images: [...images].reverse() });
   assert.deepEqual(pieces.map((p) => [p.title, p.subtitle, p.slug]), [
-    ['Claude Opus 5.5', 'Self Portrait', 'claude-opus-5-5-self-portrait'],
+    ['Claude Opus 5.5', 'Self-Portrait', 'claude-opus-5-5-self-portrait'],
     ['Deepseek v4 Flash', null, 'deepseek-v4-flash'],
-    ['Kimi K3 Self Portrait', null, 'kimi-k3-self-portrait'],
+    ['Kimi K3', 'Self-Portrait', 'kimi-k3-self-portrait'],
   ]);
   assert.deepEqual(Object.keys(pieces[0]).sort(), ['file', 'slug', 'stealth', 'subtitle', 'thoughts', 'title']);
 });
@@ -55,7 +55,7 @@ test('planGallery marks stealth pieces from overrides; everything else is not st
   const overrides = parseOverrides('{ "Deepseek v4 Flash.png": { "stealth": true }, "kimi-k3-self-portrait.png": { "stealth": false } }', images);
   const pieces = planGallery({ images, overrides });
   assert.deepEqual(pieces.map((p) => [p.file, p.stealth]), [
-    ['Claude Opus 5.5 - Self Portrait.png', false],
+    ['Claude Opus 5.5 - Self-Portrait.png', false],
     ['Deepseek v4 Flash.png', true],
     ['kimi-k3-self-portrait.png', false],
   ]);
@@ -65,15 +65,15 @@ test('planGallery applies overrides; empty subtitle removes it; blank title fall
   const pieces = planGallery({
     images,
     overrides: {
-      'Deepseek v4 Flash.png': { title: 'DeepSeek v4 Flash', subtitle: 'Self Portrait' },
-      'Claude Opus 5.5 - Self Portrait.png': { subtitle: '' },
+      'Deepseek v4 Flash.png': { title: 'DeepSeek v4 Flash', subtitle: 'Self-Portrait' },
+      'Claude Opus 5.5 - Self-Portrait.png': { subtitle: '' },
       'kimi-k3-self-portrait.png': { title: '  ' },
     },
   });
   assert.deepEqual(pieces.map((p) => [p.title, p.subtitle]), [
     ['Claude Opus 5.5', null],
-    ['DeepSeek v4 Flash', 'Self Portrait'],
-    ['Kimi K3 Self Portrait', null],
+    ['DeepSeek v4 Flash', 'Self-Portrait'],
+    ['Kimi K3', 'Self-Portrait'],
   ]);
 });
 
