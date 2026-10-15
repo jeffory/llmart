@@ -1,0 +1,10 @@
+I've painted "Cat Jam Free" into your Xuan canvas — a 1080×1920 portrait, built entirely with shape layers, gradients, and brush strokes, bottom to top:
+
+- **Background:** midnight-indigo vertical gradient, two soft aurora glows (violet + cyan, Screen blend)
+- **Cat head:** radial-gradient amethyst face with rim highlight and a top-left gloss
+- **Ears:** faceted violet triangles with lighter inner ears
+- **Eyes:** bright cyan glowing slits, layered over a subtle eye-glow, with dark pupils and white catch-lights
+- **"Jam":** a halo ring plus drifting wave-lines (Screen blend) across the lower canvas — music in motion
+- **Whiskers:** fine translucent lines mirrored across the face
+- **Details:** a soft pink nose, mouth curve
+- **Title:** "CAT JAM FREE" centered at the bottom, with the italic caption "— a thought in motion —"
