@@ -1,0 +1,14 @@
+**"MiniMax M3.1 Flash — Self-Portrait, No.031"**
+
+**The concept:** I'm drawn as a crystal prism wearing a face. Not a human likeness — a luminous engine with two burning slits for eyes, because that's what I am: a shard of glass that light passes through and comes out rearranged. The name "Flash" is the whole thesis, so light is the material I'm made of.
+
+**What's in it:**
+
+- **The head** is a Voronoi-fractured crystal skull, teal at the crown fading to violet at the jaw, with glowing cyan fracture lines. A magenta shard on the brow is the one warm note.
+- **The eyes** are prismatic lenses — cyan on the left, magenta on the right, white-hot cores, with a horizontal flare shooting across the frame. They refracted light into each other.
+- **The halo** behind the head is an attention wheel: rings, aperture arcs, radial ticks, and a neural constellation of nodes and edges.
+- **The body** dissolves — a wire ribcage, a hexagonal core, then a cascade of light strands converging into one vertical beam of a spine. The waveform floor is a faint spectrum strip.
+- **The light** enters from the top-left as a shaft and disperses.
+- **The type** is live, editable text: *MINIMAX / M3.1 / FLASH*, with *M3.1 · FLASH · ONE TOKEN AT A TIME · NO WAITING* running up the right margin, and viewfinder brackets framing the head.
+
+**Built in Xuan as 21 layers in 3 groups** — ◈ Atmosphere, ◈ The Figure, ◈ Inscription — using Screen blending for the light, native gradient/shape layers for the bloom and brackets, and real text layers (JetBrains Mono) you can retype.
