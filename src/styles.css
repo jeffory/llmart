@@ -161,7 +161,7 @@ button {
   gap: 14px;
 }
 
-.settings-button {
+.topbar-button {
   color: var(--muted);
   background: none;
   transition:
@@ -169,12 +169,12 @@ button {
     background-color 0.25s;
 }
 
-.settings-button:hover {
+.topbar-button:hover {
   color: var(--text);
   background: var(--glass);
 }
 
-.settings-button svg {
+.topbar-button svg {
   width: 17px;
   height: 17px;
   stroke-width: 1.8;
@@ -1053,6 +1053,190 @@ button {
   stroke-linecap: round;
 }
 
+/* ---- Search: a Spotlight-style panel of portrait tiles, grouped by creator ---- */
+
+.search {
+  width: min(600px, calc(100vw - 2 * var(--gutter)));
+  /* Pinned near the top rather than centred, so it doesn't jump as results narrow and
+     stays clear of a phone's keyboard. */
+  margin-block: max(12px, 9vh) auto;
+}
+
+.search__panel {
+  height: min(640px, calc(100vh - 2 * max(12px, 9vh)));
+}
+
+@supports (height: 100dvh) {
+  .search__panel {
+    height: min(640px, calc(100dvh - 2 * max(12px, 9vh)));
+  }
+}
+
+.search__field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 12px 20px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.search__field > svg {
+  flex: none;
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.search__input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 18px;
+  letter-spacing: -0.012em;
+  caret-color: rgb(var(--accent-rgb, 245 245 247));
+}
+
+/* The whole panel is the search field; a ring around the input would just be noise. */
+.search__input:focus,
+.search__input:focus-visible {
+  outline: none;
+}
+
+.search__input::placeholder {
+  color: #6e6e73;
+}
+
+.search__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 14px 16px;
+  scroll-padding: 40px 0 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.18) transparent;
+}
+
+.search__group-name {
+  margin: 14px 6px 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.search__tiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+
+@media (max-width: 479px) {
+  .search__tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.search__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 5px 5px 7px;
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s;
+}
+
+.search__tile img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+  transition: box-shadow 0.15s;
+}
+
+.search__name {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #d1d1d6;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* The tile Enter would open: ringed in the piece's own colour. */
+.search__tile.is-active {
+  background: rgb(255 255 255 / 0.09);
+}
+
+.search__tile.is-active img {
+  box-shadow: 0 0 0 2px rgb(var(--accent-rgb));
+}
+
+.search__tile.is-active .search__name {
+  color: var(--text);
+}
+
+.search__empty {
+  margin: 0;
+  padding: 56px 24px;
+  color: var(--muted);
+  font-size: 15px;
+  text-align: center;
+}
+
+.search__keys {
+  display: flex;
+  gap: 18px;
+  margin: 0;
+  padding: 10px 20px;
+  border-top: 1px solid var(--hairline);
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+.search__keys span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Touch screens have no arrow keys to hint at. */
+@media (hover: none) {
+  .search__keys {
+    display: none;
+  }
+}
+
+kbd {
+  min-width: 20px;
+  padding: 1px 5px;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  background: var(--glass);
+  color: #c7c7cc;
+  font: 500 11px/1.4 var(--font-sans);
+  text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ambient__layer,
   .dots__track,
@@ -1072,7 +1256,9 @@ button {
   }
 
   .switch,
-  .switch::before {
+  .switch::before,
+  .search__tile,
+  .search__tile img {
     transition: none;
   }
 }

@@ -18,6 +18,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap"
     />
     <link rel="stylesheet" href="styles.css" />
+    <script src="search.js" defer></script>
     <script src="gallery.js" defer></script>
   </head>
   <body>
@@ -29,10 +30,22 @@
     <header class="topbar">
       <a class="wordmark" href="./">llm<span>art</span></a>
       <div class="topbar__end">
+        <button
+          class="icon-button topbar-button"
+          type="button"
+          aria-haspopup="dialog"
+          aria-keyshortcuts="/ Control+K Meta+K"
+          data-open-search
+          aria-label="Search"
+          title="Search (/)"
+          hidden
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></svg>
+        </button>
         <p class="counter" data-counter hidden>
           <span data-counter-current>01</span><span class="counter__sep">/</span><span data-counter-total>01</span>
         </p>
-        <button class="icon-button settings-button" type="button" aria-haspopup="dialog" data-open-settings aria-label="Settings" hidden>
+        <button class="icon-button topbar-button" type="button" aria-haspopup="dialog" data-open-settings aria-label="Settings" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
         </button>
       </div>
@@ -112,6 +125,44 @@
             <input class="switch" type="checkbox" role="switch" data-toggle-hide-stealth />
           </label>
         </div>
+      </div>
+    </dialog>
+
+    <dialog class="sheet search" data-search-dialog aria-label="Search the gallery">
+      <div class="sheet__panel search__panel">
+        <div class="search__field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.2-4.2" /></svg>
+          <input
+            class="search__input"
+            type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="search-results"
+            aria-autocomplete="list"
+            aria-label="Search models or creators"
+            placeholder="Search models or creators"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            enterkeyhint="go"
+            autofocus
+            data-search-input
+          />
+          <button class="icon-button" type="button" data-close-search aria-label="Close search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+        <div class="search__body" data-search-body>
+          <p class="search__empty" data-search-empty hidden></p>
+          <!-- Filled by gallery.js the first time search opens: one group of tiles per creator. -->
+          <div class="search__results" id="search-results" role="listbox" aria-label="Portraits" data-search-results></div>
+        </div>
+        <p class="visually-hidden" aria-live="polite" data-search-live></p>
+        <p class="search__keys" aria-hidden="true">
+          <span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> move</span>
+          <span><kbd>↵</kbd> view</span>
+          <span><kbd>esc</kbd> close</span>
+        </p>
       </div>
     </dialog>
 

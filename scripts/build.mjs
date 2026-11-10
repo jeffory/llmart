@@ -13,6 +13,9 @@ const MAX_EDGE = 1600;
 const WEBP_QUALITY = 82;
 // Part of every image hash, so changing encoder settings busts caches.
 const ENCODER_ID = `webp:q${WEBP_QUALITY}:edge${MAX_EDGE}:v1`;
+// Search tiles: a fixed 9:16 crop, about 2× the size a tile is drawn at.
+const THUMB = { width: 180, height: 320, quality: 72 };
+const THUMB_ENCODER_ID = `webp:q${THUMB.quality}:${THUMB.width}x${THUMB.height}:cover:v1`;
 const DATA_PLACEHOLDER = '<!-- GALLERY_DATA -->';
 const FAQ_PLACEHOLDER = '<!-- FAQ -->';
 const HEADERS = '/img/*\n  Cache-Control: public, max-age=31536000, immutable\n';
@@ -50,6 +53,7 @@ export async function build({
       slug: piece.slug,
       title: piece.title,
       subtitle: piece.subtitle,
+      creator: piece.creator,
       stealth: piece.stealth,
       lowEffort: piece.lowEffort,
       ...image,
@@ -73,6 +77,8 @@ export async function build({
   await Promise.all(staticFiles.map((file) => copyFile(path.join(srcDir, file), path.join(outDir, file))));
   await writeFile(path.join(outDir, '_headers'), HEADERS);
 
+  const uncredited = manifest.filter((piece) => !piece.creator && !piece.stealth).map((piece) => piece.title);
+  if (uncredited.length > 0) log(`  no creator yet (add "creator" in gallery.json): ${uncredited.join(', ')}`);
   log(`Built ${manifest.length} piece${manifest.length === 1 ? '' : 's'} → ${path.relative(process.cwd(), outDir) || '.'}`);
   return manifest;
 }
@@ -92,10 +98,19 @@ async function processImage(file, slug, outDir) {
       .resize(48, 48, { fit: 'fill' })
       .raw()
       .toBuffer({ resolveWithObject: true });
+    const thumbHash = createHash('sha256').update(THUMB_ENCODER_ID).update(source).digest('hex').slice(0, 8);
+    const thumbData = await sharp(source)
+      .rotate()
+      .resize(THUMB.width, THUMB.height, { fit: 'cover', position: 'attention' })
+      .webp({ quality: THUMB.quality })
+      .toBuffer();
     const src = `img/${slug}.${hash}.webp`;
+    const thumb = `img/${slug}.${thumbHash}.thumb.webp`;
     await writeFile(path.join(outDir, src), data);
+    await writeFile(path.join(outDir, thumb), thumbData);
     return {
       src,
+      thumb,
       width: info.width,
       height: info.height,
       accent: pickAccent(thumbnail.data, thumbnail.info.channels),

@@ -40,6 +40,14 @@
     settingStealth: $('[data-setting-stealth]'),
     toggleHideStealth: $('[data-toggle-hide-stealth]'),
     stealthList: $('[data-stealth-list]'),
+    openSearch: $('[data-open-search]'),
+    searchDialog: $('[data-search-dialog]'),
+    closeSearch: $('[data-close-search]'),
+    searchInput: $('[data-search-input]'),
+    searchBody: $('[data-search-body]'),
+    searchResults: $('[data-search-results]'),
+    searchEmpty: $('[data-search-empty]'),
+    searchLive: $('[data-search-live]'),
   };
   const LOW_EFFORT_HINT = "Hidden by default: the model didn't seem to put much effort into this one";
   // Each setting: its switch, where it's remembered, and whether a piece is hidden by it.
@@ -165,9 +173,10 @@
     const title = el('h2', 'caption__title');
     title.textContent = piece.title;
     caption.append(title);
-    if (piece.subtitle || piece.stealth || piece.lowEffort) {
+    const byline = [piece.subtitle, piece.creator].filter(Boolean).join(' · ');
+    if (byline || piece.stealth || piece.lowEffort) {
       const subtitle = el('p', 'caption__subtitle');
-      subtitle.textContent = piece.subtitle ?? '';
+      subtitle.textContent = byline;
       if (piece.stealth) {
         const tag = el('span', 'tag', { title: 'Tested anonymously before release' });
         tag.textContent = 'Stealth';
@@ -387,8 +396,19 @@
   }
 
   function onKeydown(event) {
-    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || document.querySelector('dialog[open]')) return;
-    if (event.key === 'ArrowRight') {
+    if (event.defaultPrevented) return;
+    const searchShortcut = (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key?.toLowerCase() === 'k';
+    if (searchShortcut && !els.openSearch.hidden) {
+      event.preventDefault(); // browsers use Ctrl+K for their own search box
+      if (els.searchDialog.open) els.searchDialog.close();
+      else if (!document.querySelector('dialog[open]')) openSearch();
+      return;
+    }
+    if (event.metaKey || event.ctrlKey || event.altKey || document.querySelector('dialog[open]')) return;
+    if (event.key === '/' && !els.openSearch.hidden) {
+      event.preventDefault(); // Firefox's quick find
+      openSearch();
+    } else if (event.key === 'ArrowRight') {
       event.preventDefault();
       next();
     } else if (event.key === 'ArrowLeft') {
@@ -410,12 +430,17 @@
       return -1;
     }
     const piece = allPieces.find((candidate) => candidate.slug === slug);
-    if (piece && !pieces.includes(piece)) {
-      if (piece.lowEffort) settings.showLowEffort = true;
-      if (piece.stealth) settings.hideStealth = false;
-      applySettings();
-    }
-    return piece ? pieces.indexOf(piece) : -1;
+    if (!piece) return -1;
+    reveal(piece);
+    return pieces.indexOf(piece);
+  }
+
+  // Lifts whichever settings hide this piece, for this visit only (nothing is saved).
+  function reveal(piece) {
+    if (pieces.includes(piece)) return;
+    if (piece.lowEffort) settings.showLowEffort = true;
+    if (piece.stealth) settings.hideStealth = false;
+    applySettings();
   }
 
   // ---- Thoughts (card flip) ----
@@ -443,7 +468,8 @@
     if (dialog.open) return;
     // Tinted with the colour of the piece on show.
     dialog.style.setProperty('--accent-rgb', hexToRgb(pieces[index].accent));
-    dialog.querySelector('.sheet__body').scrollTop = 0;
+    const body = dialog.querySelector('.sheet__body');
+    if (body) body.scrollTop = 0;
     dialog.showModal();
   }
 
@@ -453,6 +479,160 @@
     // Clicks on the backdrop land on the <dialog> itself; clicks in the panel don't.
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) dialog.close();
+    });
+  }
+
+  // ---- Search: every piece, grouped by creator, narrowed as you type ----
+
+  // Built the first time search opens, so the thumbnails only load for people who use it.
+  const search = { tiles: [], groups: [], pieceOf: new Map(), active: null };
+
+  function buildSearch() {
+    const fragment = document.createDocumentFragment();
+    llmartSearch.groupPieces(allPieces).forEach((group, g) => {
+      const section = el('div', 'search__group', { role: 'group', 'aria-labelledby': `search-group-${g}` });
+      const name = el('p', 'search__group-name', { id: `search-group-${g}`, role: 'presentation' });
+      name.textContent = group.name;
+      const tiles = el('div', 'search__tiles');
+      for (const piece of group.pieces) {
+        const tile = el('div', 'search__tile', { role: 'option', id: `search-${piece.slug}`, 'aria-selected': 'false' });
+        tile.style.setProperty('--accent-rgb', hexToRgb(piece.accent));
+        const img = el('img', null, {
+          src: piece.thumb,
+          alt: '',
+          width: 180,
+          height: 320,
+          loading: 'lazy',
+          decoding: 'async',
+          draggable: 'false',
+        });
+        const label = el('span', 'search__name');
+        label.textContent = piece.title;
+        tile.append(img, label);
+        tiles.append(tile);
+        search.tiles.push(tile);
+        search.pieceOf.set(tile, piece);
+      }
+      section.append(name, tiles);
+      search.groups.push(section);
+      fragment.append(section);
+    });
+    els.searchResults.append(fragment);
+  }
+
+  const shownTiles = () => search.tiles.filter((tile) => !tile.hidden);
+
+  function filterSearch() {
+    const query = els.searchInput.value;
+    for (const tile of search.tiles) tile.hidden = !llmartSearch.matches(search.pieceOf.get(tile), query);
+    for (const group of search.groups) group.hidden = !group.querySelector('.search__tile:not([hidden])');
+    const shown = shownTiles();
+    els.searchEmpty.hidden = shown.length > 0;
+    els.searchEmpty.textContent = `No portraits match “${query.trim()}”`;
+    els.searchLive.textContent = query.trim() ? `${shown.length} ${shown.length === 1 ? 'portrait' : 'portraits'}` : '';
+    els.searchBody.scrollTop = 0;
+    setActive(shown[0] ?? null);
+  }
+
+  function setActive(tile, { scroll = false } = {}) {
+    if (search.active) {
+      search.active.classList.remove('is-active');
+      search.active.setAttribute('aria-selected', 'false');
+    }
+    search.active = tile;
+    if (!tile) {
+      els.searchInput.removeAttribute('aria-activedescendant');
+      return;
+    }
+    tile.classList.add('is-active');
+    tile.setAttribute('aria-selected', 'true');
+    els.searchInput.setAttribute('aria-activedescendant', tile.id);
+    if (scroll) tile.scrollIntoView({ block: 'nearest' });
+  }
+
+  // Left/right step through the tiles in order; up/down jump to the nearest tile in the row
+  // above or below, which may belong to the next group.
+  function moveActive(key) {
+    const tiles = shownTiles();
+    const at = tiles.indexOf(search.active);
+    if (at === -1) {
+      if (tiles.length > 0) setActive(tiles[0], { scroll: true });
+      return;
+    }
+    if (key === 'ArrowRight' || key === 'ArrowLeft') {
+      const step = key === 'ArrowRight' ? 1 : -1;
+      setActive(tiles[Math.min(tiles.length - 1, Math.max(0, at + step))], { scroll: true });
+      return;
+    }
+    const here = search.active.getBoundingClientRect();
+    const down = key === 'ArrowDown';
+    let best = null;
+    let bestRow = Infinity;
+    let bestColumn = Infinity;
+    for (const tile of tiles) {
+      const box = tile.getBoundingClientRect();
+      const row = down ? box.top - here.top : here.top - box.top;
+      if (row < 1) continue; // same row, or the wrong way
+      const column = Math.abs(box.left - here.left);
+      if (row < bestRow - 1 || (Math.abs(row - bestRow) <= 1 && column < bestColumn)) {
+        best = tile;
+        bestRow = row;
+        bestColumn = column;
+      }
+    }
+    if (best) setActive(best, { scroll: true });
+  }
+
+  function openSearch() {
+    if (search.tiles.length === 0) buildSearch();
+    els.searchInput.value = '';
+    filterSearch();
+    openSheet(els.searchDialog);
+  }
+
+  // Closes search and slides the gallery to the piece, even one the settings hide.
+  function pick(tile) {
+    const piece = search.pieceOf.get(tile);
+    els.searchDialog.close();
+    reveal(piece);
+    const target = pieces.indexOf(piece);
+    go(target, Math.sign(target - index));
+  }
+
+  function onSearchKeydown(event) {
+    if (event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key?.startsWith('Arrow') && !event.shiftKey) {
+      event.preventDefault();
+      moveActive(event.key);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      if (search.active) pick(search.active);
+    } else if (event.key === 'Escape' && els.searchInput.value) {
+      // First Escape clears the query; the next one closes search.
+      event.preventDefault();
+      els.searchInput.value = '';
+      filterSearch();
+    }
+  }
+
+  function setupSearch() {
+    els.openSearch.hidden = allPieces.length < 2;
+    if (els.openSearch.hidden) return;
+    els.openSearch.addEventListener('click', openSearch);
+    els.closeSearch.addEventListener('click', () => els.searchDialog.close());
+    els.searchDialog.addEventListener('click', (event) => {
+      if (event.target === els.searchDialog) els.searchDialog.close();
+    });
+    els.searchInput.addEventListener('input', filterSearch);
+    els.searchInput.addEventListener('keydown', onSearchKeydown);
+    els.searchResults.addEventListener('click', (event) => {
+      const tile = event.target.closest('.search__tile');
+      if (tile) pick(tile);
+    });
+    // Only real mouse movement moves the highlight, so a resting cursor can't fight the keys.
+    els.searchResults.addEventListener('pointermove', (event) => {
+      const tile = event.target.closest('.search__tile');
+      if (event.pointerType === 'mouse' && tile && tile !== search.active) setActive(tile);
     });
   }
 
@@ -548,6 +728,7 @@
     els.counter.hidden = false;
     els.openFaq.hidden = els.faqBody.childElementCount === 0; // no faq.md
     setupSettings(); // picks the visible pieces and builds the dots
+    setupSearch();
     els.prev.addEventListener('click', prev);
     els.next.addEventListener('click', next);
     document.addEventListener('keydown', onKeydown);
