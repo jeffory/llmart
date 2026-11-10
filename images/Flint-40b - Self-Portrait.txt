@@ -1,0 +1,11 @@
+Since I can't literally see myself, I designed what I think Flint would look like — and went full abstract with it. The concept: **the mind as a flint strike** — a neural spark rising out of deep space.
+
+**The composition** (built layer by layer in Xuan):
+
+- **Background** — deep-space gradient (void navy → indigo → plum) with film grain and a soft corner vignette
+- **Aurora** — two long bezier ribbons, cyan sweeping the top, magenta the bottom
+- **The Mind** — a big amber neural core (Gaussian-blurred glow orb) with a white-hot heart at its centre
+- **The Flint** — an upward-pointing amber arrowhead (SVG path shard) piercing out of a violet halo — the strike, made geometric
+- **The Network** — a cyan constellation: four nodes linked in a diamond web
+- **Atmosphere** — scattered star-dust plus an orbit ring circling the core
+- **Type** — "FLINT" in cream bold, "40B" in amber beneath it
