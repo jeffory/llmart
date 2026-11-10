@@ -39,6 +39,7 @@ test('parseOverrides rejects unknown fields, wrong types and non-object entries'
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "order": "1" } }', images), galleryError(/"order" must be a number/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "stealth": "yes" } }', images), galleryError(/"stealth" must be a boolean/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "lowEffort": 1 } }', images), galleryError(/"lowEffort" must be a boolean/));
+  assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": { "creator": true } }', images), galleryError(/"creator" must be a string/));
   assert.throws(() => parseOverrides('{ "Deepseek v4 Flash.png": "DeepSeek" }', images), galleryError(/must be an object/));
 });
 
@@ -49,7 +50,7 @@ test('planGallery derives captions, sorts alphabetically and assigns slugs', () 
     ['Deepseek v4 Flash', null, 'deepseek-v4-flash'],
     ['Kimi K3', 'Self-Portrait', 'kimi-k3-self-portrait'],
   ]);
-  assert.deepEqual(Object.keys(pieces[0]).sort(), ['file', 'lowEffort', 'slug', 'stealth', 'subtitle', 'thoughts', 'title']);
+  assert.deepEqual(Object.keys(pieces[0]).sort(), ['creator', 'file', 'lowEffort', 'slug', 'stealth', 'subtitle', 'thoughts', 'title']);
 });
 
 test('planGallery marks stealth pieces from overrides; everything else is not stealth', () => {
@@ -69,6 +70,19 @@ test('planGallery marks low-effort pieces from overrides; everything else is not
     ['Claude Opus 5.5 - Self-Portrait.png', false],
     ['Deepseek v4 Flash.png', true],
     ['kimi-k3-self-portrait.png', false],
+  ]);
+});
+
+test('planGallery takes each creator from overrides, trimmed; missing or blank means unknown', () => {
+  const overrides = parseOverrides(
+    '{ "Claude Opus 5.5 - Self-Portrait.png": { "creator": " Anthropic " }, "Deepseek v4 Flash.png": { "creator": "  " } }',
+    images,
+  );
+  const pieces = planGallery({ images, overrides });
+  assert.deepEqual(pieces.map((p) => [p.file, p.creator]), [
+    ['Claude Opus 5.5 - Self-Portrait.png', 'Anthropic'],
+    ['Deepseek v4 Flash.png', null],
+    ['kimi-k3-self-portrait.png', null],
   ]);
 });
 

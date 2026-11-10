@@ -44,7 +44,10 @@ test('build writes the page, optimized images, data and cache headers', async (t
     'images/small.txt': 'I am **small**.',
     'prompt.md': 'Paint {{model}} $& </script>',
     'faq.md': '## What was the prompt?\n\n> {{prompt}}',
-    'gallery.json': JSON.stringify({ 'small.png': { title: 'Small One', order: 1, stealth: true, lowEffort: true } }),
+    'gallery.json': JSON.stringify({
+      'small.png': { title: 'Small One', order: 1, stealth: true, lowEffort: true },
+      'Tall Piece - Self-Portrait.png': { creator: 'Tall Labs' },
+    }),
   });
 
   const manifest = await build({ root, outDir, log: silent });
@@ -63,6 +66,7 @@ test('build writes the page, optimized images, data and cache headers', async (t
   assert.equal(tall.subtitle, 'Self-Portrait');
   assert.deepEqual([small.stealth, tall.stealth], [true, false]);
   assert.deepEqual([small.lowEffort, tall.lowEffort], [true, false]);
+  assert.deepEqual([small.creator, tall.creator], [null, 'Tall Labs']);
   assert.equal(tall.thoughtsHtml, null);
   assert.deepEqual([tall.width, tall.height], [800, 1600]);
   assert.deepEqual([small.width, small.height], [300, 200]);
@@ -71,6 +75,13 @@ test('build writes the page, optimized images, data and cache headers', async (t
 
   const meta = await sharp(path.join(outDir, tall.src)).metadata();
   assert.deepEqual([meta.format, meta.width, meta.height], ['webp', 800, 1600]);
+
+  // Search tiles: a small portrait crop of every piece, whatever its shape.
+  for (const piece of pieces) {
+    assert.match(piece.thumb, /^img\/[a-z0-9-]+\.[0-9a-f]{8}\.thumb\.webp$/);
+    const thumb = await sharp(path.join(outDir, piece.thumb)).metadata();
+    assert.deepEqual([thumb.format, thumb.width, thumb.height], ['webp', 180, 320]);
+  }
 
   const headers = await readFile(path.join(outDir, '_headers'), 'utf8');
   assert.match(headers, /^\/img\/\*\n {2}Cache-Control: public, max-age=31536000, immutable$/m);
@@ -113,4 +124,19 @@ test('build with no images writes an empty gallery', async (t) => {
   const html = await readFile(path.join(outDir, 'index.html'), 'utf8');
   assert.deepEqual(readManifest(html), []);
   assert.equal(readFaq(html), '', 'no faq.md means an empty FAQ');
+});
+
+test('build names the pieces that still need a creator, leaving out stealth models', async (t) => {
+  const { root, outDir } = await fixture(t, {
+    'images/Known.png': png(10, 10, { r: 0, g: 0, b: 0 }),
+    'images/Mystery.png': png(10, 10, { r: 0, g: 0, b: 0 }),
+    'images/Codename.png': png(10, 10, { r: 0, g: 0, b: 0 }),
+    'gallery.json': JSON.stringify({ 'Known.png': { creator: 'Known Labs' }, 'Codename.png': { stealth: true } }),
+  });
+  const lines = [];
+  await build({ root, outDir, log: (line) => lines.push(line) });
+  const note = lines.filter((line) => line.includes('creator'));
+  assert.equal(note.length, 1, 'one line about missing creators');
+  assert.match(note[0], /Mystery/);
+  assert.doesNotMatch(note[0], /Known|Codename/);
 });

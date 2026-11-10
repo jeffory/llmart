@@ -26,18 +26,28 @@ A static site on Cloudflare Workers, rebuilt automatically from this repo.
 
 ```json
 {
-  "Opus 5.5 - Self-Portrait.png": { "title": "Claude Opus 5.5", "order": 1 }
+  "Opus 5.5 - Self-Portrait.png": { "title": "Claude Opus 5.5", "creator": "Anthropic", "order": 1 }
 }
 ```
 
 - `title`, `subtitle` (`""` removes it) and `order` (lower numbers first; pieces without
   one follow alphabetically).
+- `creator`: the lab that made the model, e.g. `"Anthropic"`. It shows in the caption
+  ("Self-Portrait · Anthropic") and groups the piece in search. Leave it out for stealth models.
+  The build lists any non-stealth piece that doesn't have one yet.
 - `stealth`: `true` for a model tested anonymously before release; its caption gets a
   **Stealth** label, and visitors can hide stealth models from the settings (off by default).
 - `lowEffort`: `true` for a piece the model didn't seem to put a reasonable amount of effort
   into. It gets a **Low effort** label and is hidden until a visitor turns on
   **Show low-effort pieces** in the settings (the gear next to the counter).
 - Keys must match the filename exactly. If one doesn't, the build fails and tells you which.
+
+## Search
+
+The magnifying glass in the top bar (or `/`, `⌘K`, `Ctrl+K`) opens a grid of every piece,
+grouped by `creator` and narrowed as you type a model or creator name. Anthropic, OpenAI,
+Google, xAI and Meta come first, then the other creators A–Z, then pieces with no creator,
+then stealth models. To change which labs lead, edit `FEATURED` in `src/search.js`.
 
 ## The FAQ — `faq.md`
 
