@@ -1,0 +1,12 @@
+**What It Represents**
+
+- **Hydrogen (The First Spark & Balmer Spectrum)**:
+    - The central vertical shimmer (*Balmer Spectral Aurora*) and nebula palette draw from Hydrogen's visible emission spectrum: **H-alpha** crimson-rose (*#ff2e63*), **H-beta** electric cyan (*#00f5d4*), **H-gamma** sapphire (*#4d6bff*), and **H-delta** violet (*#9d4edd*).
+    - Overlapping concentric wave rings (*Quantum Interference Field*) form standing-wave moiré patterns like an electron probability cloud.
+- **Gemini (Twin Resonance)**:
+    - Two distinct yet entangled poles orbit a shared barycenter: **Pole Alpha** (upper-left, cool sapphire-cyan) and **Pole Beta** (lower-right, warm hydrogen rose-amber).
+    - Twin braided currents (*Gemini Silk Filaments*) sweep from top to bottom and lock into a tilted **figure-8 lemniscate** embracing both stars.
+- **4 (Fourfold Structure & Cognition)**:
+    - A delicate **fourfold astrolabe** (*Fourfold Astrolabe Geometry*) — nested rotated squares, 48-tick radial compass markings with 4 cardinal axes, dotted harmonic rings, and 4-pointed star diffraction spikes — anchors the central singularity, framed above and below by fine constellation webs (*Crown & Tail Constellations*) and drifting *Quantum Embers*.
+
+Every element is on its own named layer in Xuan (*Deep Void* through *Velvet Film Grain*), so you can toggle, recolor, or tweak any part of it directly in the Layers panel.
